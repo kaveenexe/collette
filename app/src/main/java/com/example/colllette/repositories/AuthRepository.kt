@@ -12,7 +12,7 @@ class AuthRepository(context: Context) {
         return try {
             authApi.login(loginDto)
         } catch (e: retrofit2.HttpException) {
-            if (e.code() == 403) {
+            if (e.code() == 401) {
                 throw AccountInactiveException("Your account is not active. Please wait for activation.")
             } else {
                 throw e

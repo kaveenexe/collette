@@ -20,11 +20,10 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") { LoginScreen(navController) }
-                composable("activationPending") { ActivationPendingScreen() }
+                composable("activationPending") { ActivationPendingScreen(navController) }
                 composable("home") { HomeScreen() }
                 // Add other destinations
             }
-
         }
     }
 }
