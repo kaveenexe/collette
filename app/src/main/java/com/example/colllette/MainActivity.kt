@@ -19,13 +19,12 @@ class MainActivity : ComponentActivity() {
         setContent {
 
                 val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = "products") {
-                composable("products") { ProductListingScreen() }
-                composable("activationPending") { ActivationPendingScreen() }
+            NavHost(navController = navController, startDestination = "login") {
+                composable("login") { LoginScreen(navController) }
+                composable("activationPending") { ActivationPendingScreen(navController) }
                 composable("home") { HomeScreen() }
                 // Add other destinations
             }
-
         }
     }
 }

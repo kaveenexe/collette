@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.colllette.data.TokenManager
-import com.example.colllette.data.local.DatabaseProvider
+import com.example.colllette.data.local.AppDatabase
 import com.example.colllette.data.local.UserEntity
 import com.example.colllette.network.*
 import com.example.colllette.repositories.AccountInactiveException
@@ -13,10 +13,11 @@ import com.example.colllette.repositories.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.example.colllette.mappers.toUserEntity
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AuthRepository(application.applicationContext)
-    private val userDao = DatabaseProvider.getDatabase(application).userDao()
+    private val userDao = AppDatabase.getInstance(application).userDao()
 
     private val _authResponse = MutableStateFlow<AuthResponse?>(null)
     val authResponse: StateFlow<AuthResponse?> = _authResponse
@@ -36,8 +37,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 // Save token
                 TokenManager.saveToken(getApplication(), response.token)
 
-                // Save user data locally
-                val userEntity = response.toUserEntity()
+                // Map AuthResponse to UserEntity
+                val userEntity = response.toUserEntity(username)
+
                 userDao.insertUser(userEntity)
             } catch (e: AccountInactiveException) {
                 _inactiveAccount.value = true
@@ -57,21 +59,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-}
 
-private fun AuthResponse.toUserEntity(): UserEntity {
-    return UserEntity(
-        // You can add username to AuthResponse if needed
-        // Add contactNumber to AuthResponse if available
-        id = userId,
-        nic = nic,
-        email = email,
-        firstName = firstName,
-        lastName = lastName,
-        username = "",
-        userType = role,
-        isActive = true, // Since the user logged in successfully
-        contactNumber = "",
-        address = address
-    )
+    // Function to get the current user from the database
+    fun getCurrentUser(): StateFlow<UserEntity?> {
+        val userFlow = MutableStateFlow<UserEntity?>(null)
+        viewModelScope.launch {
+            val user = userDao.getCurrentUser()
+            userFlow.value = user
+        }
+        return userFlow
+    }
 }
