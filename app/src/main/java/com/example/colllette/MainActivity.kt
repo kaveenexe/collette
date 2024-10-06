@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.colllette.ui.LoginScreen
 import androidx.navigation.compose.rememberNavController
+import com.example.colllette.ui.ProductListingScreen
 import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.theme.HomeScreen
 import com.example.colllette.ui.theme.RegistrationScreen
