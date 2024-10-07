@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProductListingScreen(
     productViewModel: ProductViewModel,
-    onNavigateToCart: () -> Unit
+    onNavigateToCart: () -> Unit,
+    onNavigateToProductDetails: (String) -> Unit
 ) {
     val products by productViewModel.products.collectAsState()
     val cart by productViewModel.cart.collectAsState()
@@ -114,6 +115,10 @@ fun ProductListingScreen(
                                 scope.launch {
                                     snackbarHostState.showSnackbar("${product.name} added to cart")
                                 }
+                            },
+                            onProductClick = {
+                                productViewModel.fetchProductDetails(product.id)
+                                onNavigateToProductDetails(product.id)
                             }
                         )
                     }
@@ -125,13 +130,18 @@ fun ProductListingScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(product: Product, onAddToCart: () -> Unit) {
+fun ProductCard(
+    product: Product,
+    onAddToCart: () -> Unit,
+    onProductClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.75f),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        onClick = onProductClick
     ) {
         Column(
             modifier = Modifier

@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,7 +27,8 @@ import com.example.colllette.viewmodel.ProductViewModel
 @Composable
 fun CartScreen(
     productViewModel: ProductViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onProceedToCheckout: () -> Unit
 ) {
     val cart by productViewModel.cart.collectAsState()
     val isLoading by productViewModel.isLoading.collectAsState()
@@ -35,12 +37,13 @@ fun CartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Your Cart") },
+                title = { Text("Your Cart",color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Go back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Go back",tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = customBlue)
             )
         }
     ) { paddingValues ->
@@ -87,6 +90,17 @@ fun CartScreen(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Clear Cart", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onProceedToCheckout,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = customBlue),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Proceed to Checkout", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }

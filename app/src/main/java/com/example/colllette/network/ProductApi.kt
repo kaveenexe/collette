@@ -9,6 +9,9 @@ interface ProductApi {
     @GET("api/customer/products")
     suspend fun getProducts(): List<Product>
 
+    @GET("api/customer/products/{id}")
+    suspend fun getProductDetails(@Path("id") productId: String): Product
+
     @GET("api/Cart/{userId}")
     suspend fun getCart(@Path("userId") userId: String): Cart
 
