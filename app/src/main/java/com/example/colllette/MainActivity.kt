@@ -15,10 +15,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.colllette.ui.CartScreen
 import com.example.colllette.ui.LoginScreen
+import com.example.colllette.ui.ProductDetailsScreen
 import com.example.colllette.ui.ProductListingScreen
 import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.theme.CollletteTheme
 import com.example.colllette.ui.theme.HomeScreen
+import com.example.colllette.ui.ProductDetailsScreen
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.ProductViewModelFactory
 
@@ -48,16 +50,28 @@ fun CollletteApp() {
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
-        composable("activationPending") { ActivationPendingScreen() }
+        composable("activationPending") { ActivationPendingScreen(navController) }
         composable("home") { HomeScreen() }
         composable("productListing") {
             ProductListingScreen(
                 productViewModel = productViewModel,
-                onNavigateToCart = { navController.navigate("cart") }
+                onNavigateToCart = { navController.navigate("cart") },
+                onNavigateToProductDetails = { productId ->
+                    navController.navigate("productDetails/$productId")
+                }
             )
         }
         composable("cart") {
             CartScreen(
+                productViewModel = productViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onProceedToCheckout = { /* Implement checkout navigation */ }
+            )
+        }
+        composable("productDetails/{productId}") { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            productId?.let { productViewModel.fetchProductDetails(it) }
+            ProductDetailsScreen(
                 productViewModel = productViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
