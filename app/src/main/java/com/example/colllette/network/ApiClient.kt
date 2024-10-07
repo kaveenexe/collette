@@ -12,9 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class ApiClient(private val context: Context) {
     companion object {
-
-        private const val BASE_URL = "https://7d49-192-248-2-10.ngrok-free.app" // Your backend URL
-
+        private const val BASE_URL = "http://192.168.1.3:8082/" // Replace with your actual backend URL
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {

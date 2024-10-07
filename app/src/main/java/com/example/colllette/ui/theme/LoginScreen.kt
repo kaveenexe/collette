@@ -2,6 +2,7 @@ package com.example.colllette.ui
 
 import android.app.Application
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -22,6 +23,10 @@ import com.example.colllette.R
 import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.AuthViewModel
 import com.example.colllette.viewmodel.AuthViewModelFactory
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -37,93 +42,130 @@ fun LoginScreen(navController: NavController) {
     val error by authViewModel.error.collectAsState()
     val inactiveAccount by authViewModel.inactiveAccount.collectAsState()
 
-    // Background with centered content
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
+    // Scaffold to handle Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+    ) { innerPadding ->
+        // Background with centered content
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .wrapContentSize(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(16.dp)
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
         ) {
-            // Add a logo or icon at the top
-            Image(
-                painter = painterResource(id = R.drawable.nonbglogo), // Replace with your logo
-                contentDescription = "App Logo",
-                modifier = Modifier
-                    .size(160.dp)
-                    .padding(bottom = 10.dp)
-            )
-
-            // Title
-            Text(
-                text = "Welcome Back",
-                fontSize = 24.sp,
-                color = customBlue,
-                modifier = Modifier.padding(bottom = 16.dp),
-                textAlign = TextAlign.Center
-            )
-
-            // Username Input
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-            )
-
-            // Password Input
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-            )
-
-            // Login Button
-            Button(
-                onClick = { authViewModel.login(username, password) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = customBlue)
+                    .padding(24.dp)
+                    .wrapContentSize(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text("Login", fontSize = 16.sp, color = Color.White)
-            }
+                // Add a logo or icon at the top
+                Image(
+                    painter = painterResource(id = R.drawable.nonbglogo), // Replace with your logo
+                    contentDescription = "App Logo",
+                    modifier = Modifier
+                        .size(160.dp)
+                        .padding(bottom = 10.dp)
+                )
 
-            // Error message
-            error?.let {
+                // Title
                 Text(
-                    text = "Error: $it",
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 8.dp)
+                    text = "Welcome Back",
+                    fontSize = 24.sp,
+                    color = customBlue,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // Username Input
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+
+                // Password Input
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                )
+
+                // Login Button
+                Button(
+                    onClick = { authViewModel.login(username, password) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = customBlue)
+                ) {
+                    Text("Login", fontSize = 16.sp, color = Color.White)
+                }
+
+                // Error message
+                error?.let {
+                    Text(
+                        text = "Error: $it",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                // Navigate to Login
+                Text(
+                    text = "Don't have an account? Register here",
+                    color = customBlue,
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .clickable { navController.navigate("register") },
+                    textAlign = TextAlign.Center
                 )
             }
 
-            // Handling Inactive Account and Navigation
-            if (inactiveAccount) {
-                navController.navigate("activationPending")
-            }
-
-            authResponse?.let {
-                Text("Welcome, ${it.firstName}")
-                navController.navigate("home")
+            // Handle navigation based on login state
+            // Handle navigation based on login state
+            LaunchedEffect(authResponse, inactiveAccount) {
+                when {
+                    inactiveAccount -> {
+                        navController.navigate("activationPending") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                        authViewModel.resetInactiveAccount()
+                        // Optionally, show a Snackbar message
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Account is inactive. Please activate your account.")
+                        }
+                        println("LoginScreen: Navigated to ActivationPendingScreen")
+                    }
+                    authResponse != null -> {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Welcome, ${authResponse?.firstName}!")
+                        }
+                        authViewModel.resetAuthResponse()
+                        println("LoginScreen: Navigated to HomeScreen")
+                    }
+                }
             }
         }
     }

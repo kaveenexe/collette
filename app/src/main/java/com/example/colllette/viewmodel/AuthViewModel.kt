@@ -28,11 +28,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _registrationSuccess = MutableStateFlow(false)
+    val registrationSuccess: StateFlow<Boolean> = _registrationSuccess
+
     fun login(username: String, password: String) {
         viewModelScope.launch {
+            // Reset states before starting the login attempt
+            _inactiveAccount.value = false
+            _error.value = null
+            _authResponse.value = null
+
             try {
                 val response = repository.login(username, password)
-                _authResponse.value = response
 
                 // Save token
                 TokenManager.saveToken(getApplication(), response.token)
@@ -40,33 +47,44 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 // Map AuthResponse to UserEntity
                 val userEntity = response.toUserEntity(username)
 
+                // Insert user into database
                 userDao.insertUser(userEntity)
+
+                // Now set the authResponse after inserting user data
+                _authResponse.value = response
+
+                // Logging for debugging
+                println("AuthViewModel: User data inserted and authResponse updated.")
             } catch (e: AccountInactiveException) {
                 _inactiveAccount.value = true
+                println("AuthViewModel: Account is inactive.")
             } catch (e: Exception) {
                 _error.value = e.message
+                println("AuthViewModel: Error during login - ${e.message}")
             }
         }
     }
+
 
     fun register(registerDto: UserRegisterDto) {
         viewModelScope.launch {
             try {
                 val user = repository.register(registerDto)
-                // Handle successful registration
+                _registrationSuccess.value = true
             } catch (e: Exception) {
                 _error.value = e.message
             }
         }
     }
+    fun resetRegistrationSuccess() {
+        _registrationSuccess.value = false
+    }
 
-    // Function to get the current user from the database
-    fun getCurrentUser(): StateFlow<UserEntity?> {
-        val userFlow = MutableStateFlow<UserEntity?>(null)
-        viewModelScope.launch {
-            val user = userDao.getCurrentUser()
-            userFlow.value = user
-        }
-        return userFlow
+    fun resetAuthResponse() {
+        _authResponse.value = null
+    }
+
+    fun resetInactiveAccount() {
+        _inactiveAccount.value = false
     }
 }

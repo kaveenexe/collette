@@ -13,14 +13,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.colllette.ui.HomeScreen
+import com.example.colllette.ui.theme.ActivationPendingScreen
+import com.example.colllette.ui.RegistrationScreen
 import com.example.colllette.ui.CartScreen
 import com.example.colllette.ui.LoginScreen
 import com.example.colllette.ui.ProductListingScreen
-import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.theme.CollletteTheme
-import com.example.colllette.ui.theme.HomeScreen
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.ProductViewModelFactory
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,8 +50,8 @@ fun CollletteApp() {
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
-        composable("activationPending") { ActivationPendingScreen() }
-        composable("home") { HomeScreen() }
+        composable("activationPending") { ActivationPendingScreen(navController) }
+        composable("home") { HomeScreen(navController) }
         composable("productListing") {
             ProductListingScreen(
                 productViewModel = productViewModel,
