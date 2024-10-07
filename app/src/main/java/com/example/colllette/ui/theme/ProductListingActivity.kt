@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.colllette.model.Product
+import com.example.colllette.ui.theme.BannerCarousel
 import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.UserViewModel
@@ -53,6 +54,12 @@ fun ProductListingScreen(
         product.name.contains(searchQuery, ignoreCase = true) ||
                 product.category.contains(searchQuery, ignoreCase = true)
     }
+
+    // Sample placeholder image URLs
+    val bannerImages = listOf(
+        "https://as1.ftcdn.net/v2/jpg/04/65/46/52/1000_F_465465254_1pN9MGrA831idD6zIBL7q8rnZZpUCQTy.jpg",
+        "https://as2.ftcdn.net/v2/jpg/02/49/50/15/1000_F_249501541_XmWdfAfUbWAvGxBwAM0ba2aYT36ntlpH.jpg"
+    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -112,7 +119,7 @@ fun ProductListingScreen(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = customBlue,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 3.dp)
                 )
             }
 
@@ -126,6 +133,13 @@ fun ProductListingScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp)
+            )
+            // Banner Carousel
+            BannerCarousel(
+                imageUrls = bannerImages,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             )
 
             if (isLoading) {
@@ -156,9 +170,11 @@ fun ProductListingScreen(
                     }
                 }
             }
+
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
