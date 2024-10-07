@@ -67,9 +67,9 @@ fun ProductListingScreen(
                     IconButton(onClick = onNavigateToCart) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Go to Cart")
                     }
-                    if (cart.items.isNotEmpty()) {
+                    if (cart?.items?.isNotEmpty() == true) {
                         Text(
-                            text = cart.items.size.toString(),
+                            text = cart?.items?.size.toString(),
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .offset(x = (-8).dp, y = 8.dp)
@@ -95,37 +95,27 @@ fun ProductListingScreen(
                 shape = RoundedCornerShape(8.dp)
             )
 
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-                error != null -> {
-                    Text(
-                        text = error ?: "An unknown error occurred",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(filteredProducts) { product ->
-                            ProductCard(
-                                product = product,
-                                onAddToCart = {
-                                    productViewModel.addToCart(product)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("${product.name} added to cart")
-                                    }
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else if (error != null) {
+                Text(text = error ?: "An unknown error occurred", color = MaterialTheme.colorScheme.error)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(filteredProducts) { product ->
+                        ProductCard(
+                            product = product,
+                            onAddToCart = {
+                                productViewModel.addToCart(product)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("${product.name} added to cart")
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }

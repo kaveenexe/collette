@@ -15,12 +15,13 @@ import kotlinx.coroutines.launch
 
 class ProductViewModel(application: Application) : AndroidViewModel(application) {
     private val apiClient = ApiClient(application)
+    private val userId = "user123" // Replace this with actual user ID when available
 
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products
 
-    private val _cart = MutableStateFlow(Cart("", "user123"))
-    val cart: StateFlow<Cart> = _cart
+    private val _cart = MutableStateFlow<Cart?>(null)
+    val cart: StateFlow<Cart?> = _cart
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -30,6 +31,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         fetchProducts()
+        fetchCart()
     }
 
     private fun fetchProducts() {
@@ -47,42 +49,69 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addToCart(product: Product) {
-        _cart.update { currentCart ->
-            val existingItem = currentCart.items.find { it.productId == product.id }
-            if (existingItem != null) {
-                existingItem.quantity++
-            } else {
-                currentCart.items.add(CartItem(product.id, product.name, 1, product.price))
+    private fun fetchCart() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val fetchedCart = apiClient.productApi.getCart(userId)
+                _cart.value = fetchedCart
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch cart: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
-            currentCart.copy(totalPrice = calculateTotalPrice(currentCart.items))
+        }
+    }
+
+    fun addToCart(product: Product) {
+        viewModelScope.launch {
+            try {
+                val cartItem = CartItem(product.id, product.name, 1, product.price)
+                apiClient.productApi.addToCart(userId, cartItem)
+                fetchCart() // Refresh the cart after adding an item
+            } catch (e: Exception) {
+                _error.value = "Failed to add item to cart: ${e.message}"
+            }
         }
     }
 
     fun removeFromCart(productId: String) {
-        _cart.update { currentCart ->
-            val updatedItems = currentCart.items.filter { it.productId != productId }
-            currentCart.copy(
-                items = updatedItems.toMutableList(),
-                totalPrice = calculateTotalPrice(updatedItems)
-            )
-        }
-    }
-
-    fun updateItemQuantity(productId: String, newQuantity: Int) {
-        _cart.update { currentCart ->
-            val updatedItems = currentCart.items.map { item ->
-                if (item.productId == productId) item.copy(quantity = newQuantity) else item
+        viewModelScope.launch {
+            try {
+                apiClient.productApi.removeFromCart(userId, productId)
+                fetchCart() // Refresh the cart after removing an item
+            } catch (e: Exception) {
+                _error.value = "Failed to remove item from cart: ${e.message}"
             }
-            currentCart.copy(
-                items = updatedItems.toMutableList(),
-                totalPrice = calculateTotalPrice(updatedItems)
-            )
         }
     }
 
-    private fun calculateTotalPrice(items: List<CartItem>): Double {
-        return items.sumOf { it.price * it.quantity }
+    fun updateCartItemQuantity(productId: String, newQuantity: Int) {
+        viewModelScope.launch {
+            try {
+                val currentCart = _cart.value
+                val item = currentCart?.items?.find { it.productId == productId }
+                if (item != null) {
+                    val updatedItem = item.copy(quantity = newQuantity)
+                    apiClient.productApi.updateCartItem(userId, productId, updatedItem)
+                    fetchCart() // Refresh the cart after updating an item
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to update item quantity: ${e.message}"
+            }
+        }
+    }
+
+    fun clearCart() {
+        viewModelScope.launch {
+            try {
+                apiClient.productApi.deleteCart(userId)
+                _cart.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to clear cart: ${e.message}"
+            }
+        }
     }
 }
 

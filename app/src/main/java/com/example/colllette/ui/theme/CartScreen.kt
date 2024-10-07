@@ -3,6 +3,7 @@ package com.example.colllette.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.colllette.model.CartItem
+import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.ProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +29,8 @@ fun CartScreen(
     onNavigateBack: () -> Unit
 ) {
     val cart by productViewModel.cart.collectAsState()
+    val isLoading by productViewModel.isLoading.collectAsState()
+    val error by productViewModel.error.collectAsState()
 
     Scaffold(
         topBar = {
@@ -41,7 +45,11 @@ fun CartScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
-            if (cart.items.isEmpty()) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else if (error != null) {
+                Text(text = error ?: "An unknown error occurred", color = MaterialTheme.colorScheme.error)
+            } else if (cart?.items?.isEmpty() == true) {
                 Text(
                     "Your cart is empty",
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -52,11 +60,11 @@ fun CartScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(cart.items) { item ->
+                    items(cart?.items ?: emptyList()) { item ->
                         CartItemCard(
                             item = item,
-                            onQuantityIncrease = { productViewModel.updateItemQuantity(item.productId, item.quantity + 1) },
-                            onQuantityDecrease = { productViewModel.updateItemQuantity(item.productId, item.quantity - 1) },
+                            onQuantityIncrease = { productViewModel.updateCartItemQuantity(item.productId, item.quantity + 1) },
+                            onQuantityDecrease = { productViewModel.updateCartItemQuantity(item.productId, item.quantity - 1) },
                             onRemove = { productViewModel.removeFromCart(item.productId) }
                         )
                     }
@@ -65,10 +73,21 @@ fun CartScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Total: $${String.format("%.2f", cart.totalPrice)}",
+                    text = "Total: $${String.format("%.2f", cart?.totalPrice ?: 0.0)}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { productViewModel.clearCart() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = customBlue),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Clear Cart", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
+                }
             }
         }
     }
@@ -83,7 +102,8 @@ fun CartItemCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -105,7 +125,7 @@ fun CartItemCard(
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Delete, contentDescription = "Remove item")
+                Icon(Icons.Default.Delete, contentDescription = "Remove item", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
