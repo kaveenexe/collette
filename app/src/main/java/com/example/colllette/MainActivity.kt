@@ -7,9 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.colllette.ui.LoginScreen
 import androidx.navigation.compose.rememberNavController
+import com.example.colllette.ui.HomeScreen
 import com.example.colllette.ui.theme.ActivationPendingScreen
-import com.example.colllette.ui.theme.HomeScreen
-import com.example.colllette.ui.theme.RegistrationScreen
+import com.example.colllette.ui.RegistrationScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -17,12 +17,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-                val navController = rememberNavController()
+            val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") { LoginScreen(navController) }
+                composable("register") { RegistrationScreen(navController) } // Add this composable
                 composable("activationPending") { ActivationPendingScreen(navController) }
-                composable("home") { HomeScreen() }
-                // Add other destinations
+                composable("home") { HomeScreen(navController) }
             }
         }
     }
