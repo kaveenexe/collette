@@ -13,7 +13,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.colllette.ui.HomeScreen
 import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.RegistrationScreen
 import com.example.colllette.ui.CartScreen
