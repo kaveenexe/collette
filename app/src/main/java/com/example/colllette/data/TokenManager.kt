@@ -13,15 +13,24 @@ object TokenManager {
 
     private val TOKEN_KEY = stringPreferencesKey("jwt_token")
 
+    // Save Token
     suspend fun saveToken(context: Context, token: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
         }
     }
 
+    // Retrieve Token
     fun getToken(context: Context): Flow<String?> {
         return context.dataStore.data.map { preferences ->
             preferences[TOKEN_KEY]
+        }
+    }
+
+    // Clear Token - Logout
+    suspend fun clearToken(context: Context) {
+        context.dataStore.edit { preferences ->
+            preferences.remove(TOKEN_KEY)
         }
     }
 }
