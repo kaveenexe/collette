@@ -1,10 +1,11 @@
 package com.example.colllette.model
 
 data class Product(
-    val id: String?,
+    val id: String,
     val uniqueProductId: String,
     val name: String,
     val description: String?,
+    val category: String,
     val price: Double,
     val stockQuantity: Int,
     val vendorId: String,
