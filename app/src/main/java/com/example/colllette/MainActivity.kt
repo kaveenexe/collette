@@ -20,11 +20,8 @@ import com.example.colllette.ui.CartScreen
 import com.example.colllette.ui.LoginScreen
 import com.example.colllette.ui.ProductDetailsScreen
 import com.example.colllette.ui.ProductListingScreen
+import com.example.colllette.ui.ProfileScreen
 import com.example.colllette.ui.theme.CollletteTheme
-
-import com.example.colllette.ui.theme.HomeScreen
-import com.example.colllette.ui.ProductDetailsScreen
-
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.ProductViewModelFactory
 
@@ -56,18 +53,16 @@ fun CollletteApp() {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
-        composable("home") { HomeScreen() }
+        composable("registration") { RegistrationScreen(navController) }
+        composable("home") { ProductListingScreen(
+            productViewModel = productViewModel,
+            onNavigateToCart = { navController.navigate("cart") },
+            onNavigateToProductDetails = { productId ->
+                navController.navigate("productDetails/$productId")
+            },
+            onNavigateToProfile = { navController.navigate("profile") } // Navigate to ProfileScreen
+        ) }
 
-
-        composable("productListing") {
-            ProductListingScreen(
-                productViewModel = productViewModel,
-                onNavigateToCart = { navController.navigate("cart") },
-                onNavigateToProductDetails = { productId ->
-                    navController.navigate("productDetails/$productId")
-                }
-            )
-        }
         composable("cart") {
             CartScreen(
                 productViewModel = productViewModel,
@@ -83,5 +78,6 @@ fun CollletteApp() {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+        composable("profile") { ProfileScreen(navController) } // Add ProfileScreen to navigation
     }
 }
