@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.navigation.compose)
+    implementation ("androidx.compose.material:material-icons-extended:1.5.0")
 }
 
 kapt {
