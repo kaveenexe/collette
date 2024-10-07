@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -15,21 +16,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.colllette.model.Product
 import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.ProductViewModel
+import com.example.colllette.viewmodel.UserViewModel
+import com.example.colllette.viewmodel.UserViewModelFactory
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListingScreen(
     productViewModel: ProductViewModel,
+    userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(LocalContext.current.applicationContext as android.app.Application)),
     onNavigateToCart: () -> Unit,
-    onNavigateToProductDetails: (String) -> Unit
+    onNavigateToProductDetails: (String) -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     val products by productViewModel.products.collectAsState()
     val cart by productViewModel.cart.collectAsState()
@@ -39,13 +46,58 @@ fun ProductListingScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Collect user data
+    val user by userViewModel.user.collectAsState()
+
     val filteredProducts = products.filter { product ->
         product.name.contains(searchQuery, ignoreCase = true) ||
                 product.category.contains(searchQuery, ignoreCase = true)
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Our Products",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = customBlue
+                    )
+                },
+                actions = {
+                    // User Icon
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = customBlue
+                        )
+                    }
+
+                    // Cart Icon
+                    Box {
+                        IconButton(onClick = onNavigateToCart) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Go to Cart", tint = customBlue)
+                        }
+                        if (cart?.items?.isNotEmpty() == true) {
+                            Text(
+                                text = cart?.items?.size.toString(),
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = (-8).dp, y = 8.dp)
+                                    .size(18.dp)
+                                    .background(Color.Red, CircleShape)
+                                    .wrapContentSize(Alignment.Center),
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -53,35 +105,15 @@ fun ProductListingScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // Welcome Message with User's Name
+            user?.let {
                 Text(
-                    text = "Our Products",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = "Welcome, ${it.firstName}!",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
                     color = customBlue,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Box {
-                    IconButton(onClick = onNavigateToCart) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Go to Cart")
-                    }
-                    if (cart?.items?.isNotEmpty() == true) {
-                        Text(
-                            text = cart?.items?.size.toString(),
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-8).dp, y = 8.dp)
-                                .size(18.dp)
-                                .background(Color.Red, CircleShape)
-                                .wrapContentSize(Alignment.Center),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
             }
 
             OutlinedTextField(
