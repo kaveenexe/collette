@@ -34,6 +34,9 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         fetchCart()
     }
 
+    private val _selectedProduct = MutableStateFlow<Product?>(null)
+    val selectedProduct: StateFlow<Product?> = _selectedProduct
+
     private fun fetchProducts() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -48,6 +51,22 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             }
         }
     }
+
+    fun fetchProductDetails(productId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val product = apiClient.productApi.getProductDetails(productId)
+                _selectedProduct.value = product
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch product details: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 
     private fun fetchCart() {
         viewModelScope.launch {
