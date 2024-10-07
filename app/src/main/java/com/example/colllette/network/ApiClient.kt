@@ -9,12 +9,10 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.create
 
 class ApiClient(private val context: Context) {
-
     companion object {
-        private const val BASE_URL = "https://7b6q2fwc-5134.asse.devtunnels.ms/" // Replace with your actual backend URL
+        private const val BASE_URL = "https://7d49-192-248-2-10.ngrok-free.app" // Your backend URL
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -39,12 +37,19 @@ class ApiClient(private val context: Context) {
             .build()
     }
 
-    val authApi: AuthApi by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(httpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApi::class.java)
+    }
+
+    val authApi: AuthApi by lazy {
+        retrofit.create(AuthApi::class.java)
+    }
+
+    val productApi: ProductApi by lazy {
+        retrofit.create(ProductApi::class.java)
     }
 }

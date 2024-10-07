@@ -32,6 +32,8 @@ fun ProductListingScreen(
 ) {
     val products by productViewModel.products.collectAsState()
     val cart by productViewModel.cart.collectAsState()
+    val isLoading by productViewModel.isLoading.collectAsState()
+    val error by productViewModel.error.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -93,22 +95,38 @@ fun ProductListingScreen(
                 shape = RoundedCornerShape(8.dp)
             )
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(filteredProducts) { product ->
-                    ProductCard(
-                        product = product,
-                        onAddToCart = {
-                            productViewModel.addToCart(product)
-                            scope.launch {
-                                snackbarHostState.showSnackbar("${product.name} added to cart")
-                            }
-                        }
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
+                }
+                error != null -> {
+                    Text(
+                        text = error ?: "An unknown error occurred",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(filteredProducts) { product ->
+                            ProductCard(
+                                product = product,
+                                onAddToCart = {
+                                    productViewModel.addToCart(product)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("${product.name} added to cart")
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,7 +38,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CollletteApp() {
     val navController = rememberNavController()
-    val productViewModel: ProductViewModel = viewModel(factory = ProductViewModelFactory())
+    val context = LocalContext.current
+    val productViewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
+    )
 
     NavHost(navController = navController, startDestination = "productListing") {
         composable("productListing") {

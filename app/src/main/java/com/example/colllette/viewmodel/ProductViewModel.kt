@@ -1,61 +1,59 @@
 package com.example.colllette.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.colllette.model.Product
 import com.example.colllette.model.Cart
 import com.example.colllette.model.CartItem
+import com.example.colllette.network.ApiClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ProductViewModel : ViewModel() {
+class ProductViewModel(application: Application) : AndroidViewModel(application) {
+    private val apiClient = ApiClient(application)
+
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products
 
     private val _cart = MutableStateFlow(Cart("", "user123"))
     val cart: StateFlow<Cart> = _cart
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     init {
-        // Simulate fetching products
+        fetchProducts()
+    }
+
+    private fun fetchProducts() {
         viewModelScope.launch {
-            _products.value = listOf(
-                Product(
-                    id = "1",
-                    uniqueProductId = "T001",
-                    name = "T-Shirt",
-                    description = "Comfortable cotton T-Shirt",
-                    category = "T-Shirts",
-                    price = 19.99,
-                    stockQuantity = 100,
-                    vendorId = "V001",
-                    isActive = true
-                ),
-                Product(
-                    id = "2",
-                    uniqueProductId = "J001",
-                    name = "Jeans",
-                    description = "Classic blue jeans",
-                    category = "Trousers",
-                    price = 49.99,
-                    stockQuantity = 50,
-                    vendorId = "V002",
-                    isActive = true
-                )
-                // Add more sample products as needed
-            )
+            _isLoading.value = true
+            try {
+                val fetchedProducts = apiClient.productApi.getProducts()
+                _products.value = fetchedProducts
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch products: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
     fun addToCart(product: Product) {
         _cart.update { currentCart ->
-            val existingItem = currentCart.items.find { it.productId == product.uniqueProductId }
+            val existingItem = currentCart.items.find { it.productId == product.id }
             if (existingItem != null) {
                 existingItem.quantity++
             } else {
-                currentCart.items.add(CartItem(product.uniqueProductId, product.name, 1, product.price))
+                currentCart.items.add(CartItem(product.id, product.name, 1, product.price))
             }
             currentCart.copy(totalPrice = calculateTotalPrice(currentCart.items))
         }
@@ -88,11 +86,11 @@ class ProductViewModel : ViewModel() {
     }
 }
 
-class ProductViewModelFactory : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+class ProductViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProductViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ProductViewModel() as T
+            return ProductViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
