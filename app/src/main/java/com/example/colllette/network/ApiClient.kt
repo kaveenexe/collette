@@ -52,4 +52,9 @@ class ApiClient(private val context: Context) {
     val productApi: ProductApi by lazy {
         retrofit.create(ProductApi::class.java)
     }
+
+    val userApi: UserApi by lazy {
+        retrofit.create(UserApi::class.java)
+    }
+
 }
