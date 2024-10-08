@@ -1,6 +1,5 @@
 package com.example.colllette.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,39 +10,44 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.colllette.R
-import com.example.colllette.ui.theme.customBlue
+import com.example.colllette.data.local.UserEntity
 import com.example.colllette.ui.theme.darkBlue
+import com.example.colllette.viewmodel.ProductViewModel
+import com.example.colllette.viewmodel.UserViewModel
 
 @Composable
-fun OrderCheckoutScreen(navController: NavController) {
+fun OrderCheckoutScreen(navController: NavController, userViewModel: UserViewModel, productViewModel: ProductViewModel) {
     val context = LocalContext.current
+    val user by userViewModel.user.collectAsState()
+    val cart by productViewModel.cart.collectAsState()
 
     // Constants for styling
     val cardElevation = 8.dp
     val spacing = 16.dp
     val textSizeLarge = 22.sp
     val textSizeMedium = 20.sp
-    val textSizeSmall = 18.sp
 
-    // Sample order items with images from the drawable folder
-    val orderItems = listOf(
-        OrderItem("Blue Frock", 1, 5000, R.drawable.frock), // Use your drawable resource
-        OrderItem("Denim Jeans", 2, 7900, R.drawable.jean) // Use your drawable resource
-    )
+    // Map cart items to order items
+    val orderItems = cart?.items?.map { cartItem ->
+        OrderItem(
+            name = cartItem.productName,
+            quantity = cartItem.quantity,
+            price = cartItem.price.toInt(), // Assuming price is in double, converting to int
+        )
+    } ?: emptyList() // Fallback to an empty list if cart is null
 
     // Background with light ash color
     Box(
@@ -113,7 +117,7 @@ fun OrderCheckoutScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 // Delivery Address section
-                AddressCard()
+                user?.let { AddressCard(it) }
 
                 // Order Summary section
                 Spacer(modifier = Modifier.height(24.dp))
@@ -139,7 +143,7 @@ fun OrderCheckoutScreen(navController: NavController) {
                         contentAlignment = Alignment.Center // Centers the text inside the circle
                     ) {
                         Text(
-                            text = "2", // Replace with the actual item count
+                            text = orderItems.size.toString(), // Use actual item count
                             color = Color.White, // Text color
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp // Adjust the font size as needed
@@ -152,7 +156,7 @@ fun OrderCheckoutScreen(navController: NavController) {
                 val totalAmount = OrderItemsCard(orderItems)
 
                 // Total Amount and Confirm Button
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 TotalAndConfirmRow(totalAmount)
             }
         }
@@ -163,7 +167,6 @@ data class OrderItem(
     val name: String,      // Name of the item
     val quantity: Int,     // Quantity of the item
     val price: Int,        // Price of the item
-    val imageRes: Int      // Drawable resource ID for the item's image
 )
 
 @Composable
@@ -186,8 +189,7 @@ fun OrderItemsCard(orderItems: List<OrderItem>): Int {
                 ClothingItemRow(
                     itemName = item.name,
                     quantity = item.quantity,
-                    price = item.price,
-                    imageRes = item.imageRes // Use the image resource from the OrderItem
+                    price = item.price
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Divider(thickness = 1.dp) // Add a divider line after each item
@@ -200,19 +202,11 @@ fun OrderItemsCard(orderItems: List<OrderItem>): Int {
 }
 
 @Composable
-fun ClothingItemRow(itemName: String, quantity: Int, price: Int, imageRes: Int) {
+fun ClothingItemRow(itemName: String, quantity: Int, price: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Load image from resources
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(80.dp) // Set the desired image size
-                .clip(RoundedCornerShape(8.dp)) // Optional: Add rounding to the image
-        )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(
@@ -286,7 +280,7 @@ fun TotalAndConfirmRow(totalAmount: Int) {
 }
 
 @Composable
-fun AddressCard() {
+fun AddressCard(user: UserEntity) {
     // Delivery Address Title
     val spacing = 16.dp
     val textSizeMedium = 20.sp
@@ -337,23 +331,13 @@ fun AddressCard() {
                     Column {
                         // Address Lines
                         Text(
-                            text = "John Doe",
-                            fontSize = 18.sp, // Address line 1 font size
+                            text = user.firstName + " " + user.lastName,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "123, Main Street",
-                            fontSize = 16.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = "Colombo 07",
-                            fontSize = 16.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = "Sri Lanka",
+                            text = user.address ?: "No address provided", // Fallback in case of no address
                             fontSize = 16.sp,
                             color = Color.Gray
                         )
