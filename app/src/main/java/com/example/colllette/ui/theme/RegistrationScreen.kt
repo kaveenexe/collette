@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-//import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -99,13 +99,13 @@ fun RegistrationScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            Image(
-//                painter = painterResource(id = R.drawable.nonbglogo), // Replace with your logo
-//                contentDescription = "App Logo",
-//                modifier = Modifier
-//                    .size(200.dp)
-//                    .padding(bottom = -10.dp)
-//            )
+            Image(
+                painter = painterResource(id = R.drawable.nonbglogo), // Replace with your logo
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(bottom = 0.dp)
+            )
             // Title
             Text(
                 text = "Create a new account",
