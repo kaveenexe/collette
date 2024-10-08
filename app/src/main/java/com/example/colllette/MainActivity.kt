@@ -1,5 +1,6 @@
 package com.example.colllette
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,7 +34,8 @@ import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.ProductViewModelFactory
 import com.example.colllette.viewmodel.UserViewModel
 import com.example.colllette.viewmodel.UserViewModelFactory
-
+import com.example.colllette.viewmodel.OrderViewModel
+import com.example.colllette.viewmodel.OrderViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,25 +60,25 @@ fun CollletteApp() {
     val productViewModel: ProductViewModel = viewModel(
         factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
     )
-    // Initialize ApiClient
-    val apiClient = ApiClient(context.applicationContext)
-
     // Initialize UserRepository inside the UserViewModelFactory
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(
             application = context.applicationContext as android.app.Application
         )
     )
+    val orderViewModel: OrderViewModel = viewModel(
+        factory = OrderViewModelFactory(
+            application = context.applicationContext as android.app.Application,
+            userViewModel = userViewModel
+        )
+    )
+    // Initialize ApiClient
+    val apiClient = ApiClient(context.applicationContext)
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(navController = navController, startDestination = "checkout") {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
-        composable("checkout") { OrderCheckoutScreen(navController)}
-        composable("payment") { PaymentScreen(navController)}
-        composable("success") {OrderSuccessScreen(navController)}
-        composable("order") { ViewOrderScreen(navController)}
-        composable("history") { OrderHistoryScreen(navController)}
         composable("home") { ProductListingScreen(
             productViewModel = productViewModel,
             onNavigateToCart = { navController.navigate("cart") },
@@ -104,5 +106,34 @@ fun CollletteApp() {
         composable("profile") {
             ProfileScreen(navController, userViewModel = userViewModel)
         }
-    }
+        composable("checkout") {
+            OrderCheckoutScreen(
+                navController = navController,
+                userViewModel = userViewModel,
+                productViewModel = productViewModel
+            )
+        }
+        composable("payment") {
+            PaymentScreen(
+                navController = navController,
+                userViewModel = userViewModel,
+                productViewModel = productViewModel,
+                orderViewModel = orderViewModel
+            )
+        }
+        composable("order_success_screen/{orderId}/{customerId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId")
+            val customerId = backStackEntry.arguments?.getString("customerId")
+            OrderSuccessScreen(navController, orderId, customerId)
+        }
+        composable("view_order_screen/{orderId}/{customerId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
+            ViewOrderScreen(navController, orderId, customerId, viewModel())
+        }
+        composable("history") {
+            OrderHistoryScreen(
+                navController = navController,
+                orderViewModel = orderViewModel)}
+        }
 }

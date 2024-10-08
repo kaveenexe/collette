@@ -19,43 +19,25 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.navigation.NavController
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import com.example.colllette.R
 import com.example.colllette.ui.theme.darkBlue
+import com.example.colllette.viewmodel.OrderViewModel
 
 @Composable
-fun OrderHistoryScreen(navController: NavController) {
+fun OrderHistoryScreen(navController: NavController, orderViewModel: OrderViewModel) {
+    // Observe orders from the ViewModel
+    val orders by orderViewModel.orders.collectAsState(initial = emptyList())
+    val isLoading by orderViewModel.isLoading.collectAsState(initial = false)
+    val error by orderViewModel.error.collectAsState(initial = null)
+
     val cardElevation = 8.dp
     val spacing = 16.dp
     val textSizeLarge = 22.sp
-    val textSizeMedium = 20.sp
-
-    val orders = listOf(
-        Order(
-            id = "#ORD78968",
-            price = 20800.00,
-            date = "October 7, 2024 at 09:41 AM",
-            status = "Processing",
-            customIconRes = R.drawable.processing  // Custom processing icon
-        ),
-        Order(
-            id = "#ORD42265",
-            price = 4600.00,
-            date = "October 6, 2024 at 08:30 AM",
-            status = "Cancelled",
-            customIconRes = R.drawable.cancel  // Custom canceled icon
-        ),
-        Order(
-            id = "#ORD91250",
-            price = 8500.50,
-            date = "October 5, 2024 at 07:15 PM",
-            status = "Delivered",
-            customIconRes = R.drawable.delivered  // Custom delivered icon
-        )
-    )
 
     // Background with light ash color
     Box(
@@ -97,9 +79,27 @@ fun OrderHistoryScreen(navController: NavController) {
                 }
             }
 
-            // Create card for each order
-            orders.forEach { order ->
-                OrderCard(order, cardElevation)
+            // Show loading indicator
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            // Show error message
+            else if (error != null) {
+                Text(
+                    text = error!!,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            } else {
+                // Display a message if there are no orders
+                Text(
+                    text = "No orders found.",
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
             }
         }
     }
@@ -188,19 +188,19 @@ fun OrderCard(order: Order, cardElevation: Dp) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Price and Status
+            // Total Amount
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Price",
+                    text = "Total Amount",
                     fontSize = 16.sp,
                     color = Color.Black
                 )
                 Text(
-                    text = "Rs.${order.price}",
+                    text = "Rs.${order.totalAmount}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -242,7 +242,10 @@ fun OrderCard(order: Order, cardElevation: Dp) {
             ) {
                 // Report Issue Button
                 OutlinedButton(
-                    onClick = { /* TODO: Report Issue */ },
+                    onClick = {
+                        // TODO: Implement report issue functionality
+                        // e.g., navController.navigate("report_issue/${order.id}")
+                    },
                     modifier = Modifier
                         .width(155.dp)  // Custom width
                         .height(35.dp),  // Custom height
@@ -257,7 +260,10 @@ fun OrderCard(order: Order, cardElevation: Dp) {
 
                 // Track Order Button
                 Button(
-                    onClick = { /* TODO: Track Order */ },
+                    onClick = {
+                        // TODO: Implement track order functionality
+                        // e.g., navController.navigate("view_order_screen/{orderId}/{customerId}")
+                    },
                     modifier = Modifier
                         .width(155.dp)  // Custom width
                         .height(35.dp),  // Custom height
@@ -276,10 +282,12 @@ fun OrderCard(order: Order, cardElevation: Dp) {
 
 data class Order(
     val id: String,
-    val price: Double,
     val date: String,
     val status: String,
     val icon: ImageVector? = null,
     val iconColor: Color? = null,
-    val customIconRes: Int? = null  // Add this to allow custom images
+    val customIconRes: Int? = null,
+    val customerId: String? = null,
+    val orderItems: List<Unit> = emptyList(),
+    val totalAmount: Double
 )
