@@ -61,11 +61,13 @@ fun CollletteApp() {
         factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
     )
     // Initialize UserRepository inside the UserViewModelFactory
+    val application = context.applicationContext as android.app.Application
+
+    // Initialize UserViewModel
     val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(
-            application = context.applicationContext as android.app.Application
-        )
+        factory = UserViewModelFactory(application)
     )
+    // Initialize OrderViewModel
     val orderViewModel: OrderViewModel = viewModel(
         factory = OrderViewModelFactory(
             application = context.applicationContext as android.app.Application,
