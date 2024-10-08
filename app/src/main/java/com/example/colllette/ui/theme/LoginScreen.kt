@@ -60,18 +60,17 @@ fun LoginScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
-                    .wrapContentSize(Alignment.Center),
+                    .wrapContentHeight(align = Alignment.Top),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
                 // Add a logo or icon at the top
                 Image(
                     painter = painterResource(id = R.drawable.nonbglogo), // Replace with your logo
                     contentDescription = "App Logo",
                     modifier = Modifier
-                        .size(160.dp)
-                        .padding(bottom = 10.dp)
+                        .size(300.dp)
+                        .padding(bottom = 1.dp)
                 )
 
                 // Title
@@ -79,7 +78,7 @@ fun LoginScreen(navController: NavController) {
                     text = "Welcome Back",
                     fontSize = 24.sp,
                     color = customBlue,
-                    modifier = Modifier.padding(bottom = 16.dp),
+                    modifier = Modifier.padding(bottom = 18.dp),
                     textAlign = TextAlign.Center
                 )
 
@@ -135,7 +134,7 @@ fun LoginScreen(navController: NavController) {
                     color = customBlue,
                     modifier = Modifier
                         .padding(top = 16.dp)
-                        .clickable { navController.navigate("register") },
+                        .clickable { navController.navigate("registration") },
                     textAlign = TextAlign.Center
                 )
             }
