@@ -14,7 +14,7 @@ import retrofit2.create
 class ApiClient(private val context: Context) {
 
     companion object {
-        private const val BASE_URL = "https://7b6q2fwc-5134.asse.devtunnels.ms/" // Replace with your actual backend URL
+        private const val BASE_URL = "https://247e-192-248-2-10.ngrok-free.app/" // Replace with your actual backend URL
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
