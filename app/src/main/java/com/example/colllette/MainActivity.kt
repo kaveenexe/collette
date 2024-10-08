@@ -20,6 +20,11 @@ import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.RegistrationScreen
 import com.example.colllette.ui.CartScreen
 import com.example.colllette.ui.LoginScreen
+import com.example.colllette.ui.OrderCheckoutScreen
+import com.example.colllette.ui.OrderHistoryScreen
+import com.example.colllette.ui.OrderSuccessScreen
+import com.example.colllette.ui.PaymentScreen
+import com.example.colllette.ui.ViewOrderScreen
 import com.example.colllette.ui.ProductDetailsScreen
 import com.example.colllette.ui.ProductListingScreen
 import com.example.colllette.ui.ProfileScreen
@@ -67,6 +72,11 @@ fun CollletteApp() {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
+        composable("checkout") { OrderCheckoutScreen(navController)}
+        composable("payment") { PaymentScreen(navController)}
+        composable("success") {OrderSuccessScreen(navController)}
+        composable("order") { ViewOrderScreen(navController)}
+        composable("history") { OrderHistoryScreen(navController)}
         composable("home") { ProductListingScreen(
             productViewModel = productViewModel,
             onNavigateToCart = { navController.navigate("cart") },
