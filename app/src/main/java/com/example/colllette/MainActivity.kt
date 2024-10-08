@@ -55,17 +55,16 @@ class MainActivity : ComponentActivity() {
 fun CollletteApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val productViewModel: ProductViewModel = viewModel(
-        factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
-    )
-    // Initialize ApiClient
-    val apiClient = ApiClient(context.applicationContext)
+    val application = context.applicationContext as android.app.Application
 
-    // Initialize UserRepository inside the UserViewModelFactory
+    // Initialize UserViewModel
     val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(
-            application = context.applicationContext as android.app.Application
-        )
+        factory = UserViewModelFactory(application)
+    )
+
+    // Initialize ProductViewModel with UserViewModel
+    val productViewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(application, userViewModel)
     )
 
     NavHost(navController = navController, startDestination = "login") {

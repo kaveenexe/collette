@@ -8,14 +8,25 @@ import com.example.colllette.model.Product
 import com.example.colllette.model.Cart
 import com.example.colllette.model.CartItem
 import com.example.colllette.network.ApiClient
+import com.example.colllette.network.ProductApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ProductViewModel(application: Application) : AndroidViewModel(application) {
+class ProductViewModel(
+    application: Application,
+    private val userViewModel: UserViewModel // Inject UserViewModel as a parameter
+) : AndroidViewModel(application) {
     private val apiClient = ApiClient(application)
-    private val userId = "user123" // Replace this with actual user ID when available
+
+    // Get the user's address from the UserViewModel
+    fun getUserId(): String {
+        return userViewModel.user.value?.id ?: throw IllegalStateException("User ID not available")
+    }
+
+    private val productApi: ProductApi = apiClient.productApi
+
 
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products
@@ -72,6 +83,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                val userId = getUserId() // This will throw an exception if the ID is not available
                 val fetchedCart = apiClient.productApi.getCart(userId)
                 _cart.value = fetchedCart
                 _error.value = null
@@ -86,6 +98,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun addToCart(product: Product) {
         viewModelScope.launch {
             try {
+                val userId = getUserId() // This will throw an exception if the ID is not available
                 val cartItem = CartItem(product.id, product.name, 1, product.price)
                 apiClient.productApi.addToCart(userId, cartItem)
                 fetchCart() // Refresh the cart after adding an item
@@ -98,6 +111,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun removeFromCart(productId: String) {
         viewModelScope.launch {
             try {
+                val userId = getUserId() // This will throw an exception if the ID is not available
                 apiClient.productApi.removeFromCart(userId, productId)
                 fetchCart() // Refresh the cart after removing an item
             } catch (e: Exception) {
@@ -113,6 +127,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
                 val item = currentCart?.items?.find { it.productId == productId }
                 if (item != null) {
                     val updatedItem = item.copy(quantity = newQuantity)
+                    val userId = getUserId() // This will throw an exception if the ID is not available
                     apiClient.productApi.updateCartItem(userId, productId, updatedItem)
                     fetchCart() // Refresh the cart after updating an item
                 }
@@ -125,6 +140,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun clearCart() {
         viewModelScope.launch {
             try {
+                val userId = getUserId() // This will throw an exception if the ID is not available
                 apiClient.productApi.deleteCart(userId)
                 _cart.value = null
             } catch (e: Exception) {
@@ -132,13 +148,17 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             }
         }
     }
+
 }
 
-class ProductViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+class ProductViewModelFactory(
+    private val application: Application,
+    private val userViewModel: UserViewModel
+) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProductViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ProductViewModel(application) as T
+            return ProductViewModel(application, userViewModel) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
