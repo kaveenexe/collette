@@ -13,6 +13,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.colllette.data.local.AppDatabase
+import com.example.colllette.network.ApiClient
+import com.example.colllette.repositories.UserRepository
 import com.example.colllette.ui.theme.ActivationPendingScreen
 import com.example.colllette.ui.RegistrationScreen
 import com.example.colllette.ui.CartScreen
@@ -23,6 +26,8 @@ import com.example.colllette.ui.ProfileScreen
 import com.example.colllette.ui.theme.CollletteTheme
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.ProductViewModelFactory
+import com.example.colllette.viewmodel.UserViewModel
+import com.example.colllette.viewmodel.UserViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
@@ -47,6 +52,15 @@ fun CollletteApp() {
     val context = LocalContext.current
     val productViewModel: ProductViewModel = viewModel(
         factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
+    )
+    // Initialize ApiClient
+    val apiClient = ApiClient(context.applicationContext)
+
+    // Initialize UserRepository inside the UserViewModelFactory
+    val userViewModel: UserViewModel = viewModel(
+        factory = UserViewModelFactory(
+            application = context.applicationContext as android.app.Application
+        )
     )
 
     NavHost(navController = navController, startDestination = "login") {
@@ -77,6 +91,8 @@ fun CollletteApp() {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        composable("profile") { ProfileScreen(navController) } // Add ProfileScreen to navigation
+        composable("profile") {
+            ProfileScreen(navController, userViewModel = userViewModel)
+        }
     }
 }
