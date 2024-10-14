@@ -57,15 +57,18 @@ class MainActivity : ComponentActivity() {
 fun CollletteApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val productViewModel: ProductViewModel = viewModel(
-        factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
-    )
     // Initialize UserRepository inside the UserViewModelFactory
     val application = context.applicationContext as android.app.Application
-
     // Initialize UserViewModel
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
+    )
+    // Initialize ProductViewModel
+    val productViewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(
+            application = context.applicationContext as android.app.Application,
+            userViewModel = userViewModel
+        )
     )
     // Initialize OrderViewModel
     val orderViewModel: OrderViewModel = viewModel(
