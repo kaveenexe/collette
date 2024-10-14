@@ -263,23 +263,23 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
             }
         }
 
-        // Show confirmation dialog if showDialog is true
-        if (showDialog) {
-            ConfirmationDialog(
-                onConfirm = {
-                    showDialog = false
-                    val orderCancellation = OrderCancellation(
-                        id = ObjectId().toHexString(),
-                        orderId = orderId,
-                        cancellationApproved = false,
-                        cancellationDate = null,
-                        cancelRequestStatus = CancelRequestStatus.Pending
-                    )
-                    viewModel.requestOrderCancellation(orderCancellation) // Call ViewModel method
-                },
-                onDismiss = { showDialog = false }
-            )
-        }
+//        // Show confirmation dialog if showDialog is true
+//        if (showDialog) {
+//            ConfirmationDialog(
+//                onConfirm = {
+//                    showDialog = false
+//                    val orderCancellation = OrderCancellation(
+//                        id = ObjectId().toHexString(),
+//                        orderId = orderId,
+//                        cancellationApproved = false,
+//                        cancellationDate = null,
+//                        cancelRequestStatus = CancelRequestStatus.Pending
+//                    )
+//                    viewModel.requestOrderCancellation(orderCancellation) // Call ViewModel method
+//                },
+//                onDismiss = { showDialog = false }
+//            )
+//        }
     }
 }
 
@@ -392,92 +392,92 @@ fun OrderItem(name: String, price: String, details: String, status: String, stat
     }
 }
 
-@Composable
-fun ConfirmationDialog(
-    message: String = "Are you sure you want to cancel the order?",
-    confirmText: String = "OK",
-    dismissText: String = "CANCEL",
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = { onDismiss() }) {
-        DialogContent(
-            message = message,
-            confirmText = confirmText,
-            dismissText = dismissText,
-            onConfirm = onConfirm,
-            onDismiss = onDismiss
-        )
-    }
-}
-
-@Composable
-private fun DialogContent(
-    message: String,
-    confirmText: String,
-    dismissText: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = message,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            DialogButtons(
-                confirmText = confirmText,
-                dismissText = dismissText,
-                onConfirm = onConfirm,
-                onDismiss = onDismiss
-            )
-        }
-    }
-}
-
-@Composable
-private fun DialogButtons(
-    confirmText: String,
-    dismissText: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Button(
-            onClick = { onDismiss() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-            shape = RoundedCornerShape(6.dp),
-            modifier = Modifier
-                .width(107.dp)
-                .height(35.dp)
-        ) {
-            Text(text = dismissText, color = Color.Black)
-        }
-
-        Button(
-            onClick = { onConfirm() },
-            colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
-            shape = RoundedCornerShape(6.dp),
-            modifier = Modifier
-                .width(100.dp)
-                .height(35.dp)
-        ) {
-            Text(text = confirmText, color = Color.White)
-        }
-    }
-}
+//@Composable
+//fun ConfirmationDialog(
+//    message: String = "Are you sure you want to cancel the order?",
+//    confirmText: String = "OK",
+//    dismissText: String = "CANCEL",
+//    onConfirm: () -> Unit,
+//    onDismiss: () -> Unit
+//) {
+//    Dialog(onDismissRequest = { onDismiss() }) {
+//        DialogContent(
+//            message = message,
+//            confirmText = confirmText,
+//            dismissText = dismissText,
+//            onConfirm = onConfirm,
+//            onDismiss = onDismiss
+//        )
+//    }
+//}
+//
+//@Composable
+//private fun DialogContent(
+//    message: String,
+//    confirmText: String,
+//    dismissText: String,
+//    onConfirm: () -> Unit,
+//    onDismiss: () -> Unit
+//) {
+//    Surface(
+//        shape = RoundedCornerShape(8.dp),
+//        color = Color.White
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .padding(16.dp)
+//                .fillMaxWidth(),
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            Text(
+//                text = message,
+//                fontWeight = FontWeight.Bold,
+//                fontSize = 15.sp,
+//                color = Color.Black,
+//                modifier = Modifier.padding(bottom = 16.dp)
+//            )
+//
+//            DialogButtons(
+//                confirmText = confirmText,
+//                dismissText = dismissText,
+//                onConfirm = onConfirm,
+//                onDismiss = onDismiss
+//            )
+//        }
+//    }
+//}
+//
+//@Composable
+//private fun DialogButtons(
+//    confirmText: String,
+//    dismissText: String,
+//    onConfirm: () -> Unit,
+//    onDismiss: () -> Unit
+//) {
+//    Row(
+//        modifier = Modifier.fillMaxWidth(),
+//        horizontalArrangement = Arrangement.SpaceEvenly
+//    ) {
+//        Button(
+//            onClick = { onDismiss() },
+//            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
+//            shape = RoundedCornerShape(6.dp),
+//            modifier = Modifier
+//                .width(107.dp)
+//                .height(35.dp)
+//        ) {
+//            Text(text = dismissText, color = Color.Black)
+//        }
+//
+//        Button(
+//            onClick = { onConfirm() },
+//            colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
+//            shape = RoundedCornerShape(6.dp),
+//            modifier = Modifier
+//                .width(100.dp)
+//                .height(35.dp)
+//        ) {
+//            Text(text = confirmText, color = Color.White)
+//        }
+//    }
+//}
