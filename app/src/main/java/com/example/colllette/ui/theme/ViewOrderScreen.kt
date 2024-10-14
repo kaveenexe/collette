@@ -15,23 +15,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.colllette.ui.theme.darkBlue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.window.Dialog
+import org.bson.types.ObjectId
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import com.example.colllette.R
 import com.example.colllette.network.CancelRequestStatus
 import com.example.colllette.network.OrderCancellation
 import com.example.colllette.viewmodel.OrderViewModel
@@ -274,9 +268,8 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
             ConfirmationDialog(
                 onConfirm = {
                     showDialog = false
-                    // Create OrderCancellation object and call the ViewModel method
                     val orderCancellation = OrderCancellation(
-                        id = order!!.id,
+                        id = ObjectId().toHexString(),
                         orderId = orderId,
                         cancellationApproved = false,
                         cancellationDate = null,
@@ -401,56 +394,90 @@ fun OrderItem(name: String, price: String, details: String, status: String, stat
 
 @Composable
 fun ConfirmationDialog(
+    message: String = "Are you sure you want to cancel the order?",
+    confirmText: String = "OK",
+    dismissText: String = "CANCEL",
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = { onDismiss() }) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color.White
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Are you sure you want to cancel the order?",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // Cancel Button in dialog
-                    Button(
-                        onClick = { onDismiss() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-                        shape = RoundedCornerShape(6.dp), // Slightly rounded corners
-                        modifier = Modifier
-                            .width(107.dp)
-                            .height(35.dp)
-                    ) {
-                        Text(text = "CANCEL", color = Color.Black)
-                    }
+        DialogContent(
+            message = message,
+            confirmText = confirmText,
+            dismissText = dismissText,
+            onConfirm = onConfirm,
+            onDismiss = onDismiss
+        )
+    }
+}
 
-                    // Confirm Button in dialog
-                    Button(
-                        onClick = { onConfirm() }, // Call onConfirm when OK is clicked
-                        colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(35.dp)
-                    ) {
-                        Text(text = "OK", color = Color.White)
-                    }
-                }
-            }
+@Composable
+private fun DialogContent(
+    message: String,
+    confirmText: String,
+    dismissText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = message,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            DialogButtons(
+                confirmText = confirmText,
+                dismissText = dismissText,
+                onConfirm = onConfirm,
+                onDismiss = onDismiss
+            )
+        }
+    }
+}
+
+@Composable
+private fun DialogButtons(
+    confirmText: String,
+    dismissText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Button(
+            onClick = { onDismiss() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
+            shape = RoundedCornerShape(6.dp),
+            modifier = Modifier
+                .width(107.dp)
+                .height(35.dp)
+        ) {
+            Text(text = dismissText, color = Color.Black)
+        }
+
+        Button(
+            onClick = { onConfirm() },
+            colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
+            shape = RoundedCornerShape(6.dp),
+            modifier = Modifier
+                .width(100.dp)
+                .height(35.dp)
+        ) {
+            Text(text = confirmText, color = Color.White)
         }
     }
 }
