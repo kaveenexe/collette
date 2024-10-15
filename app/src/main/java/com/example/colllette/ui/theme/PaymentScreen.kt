@@ -268,7 +268,8 @@ fun TotalAndProceedSection(navController: NavController, paymentMethod: String, 
                                 customerName = "${it.firstName} ${it.lastName}",
                                 email = it.email ?: "",  // Assuming email is always present
                                 phone = it.contactNumber, // Nullable phone number
-                                singleBillingAddress = it.address ?: "" // Assuming address is provided
+                                singleBillingAddress = it.address ?: "", // Assuming address is provided
+                                billingAddress = null // Pass billingAddress as null correctly
                             )
                         }
 

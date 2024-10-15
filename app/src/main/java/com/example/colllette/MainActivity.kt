@@ -57,15 +57,18 @@ class MainActivity : ComponentActivity() {
 fun CollletteApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val productViewModel: ProductViewModel = viewModel(
-        factory = ProductViewModelFactory(context.applicationContext as android.app.Application)
-    )
     // Initialize UserRepository inside the UserViewModelFactory
     val application = context.applicationContext as android.app.Application
-
     // Initialize UserViewModel
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
+    )
+    // Initialize ProductViewModel
+    val productViewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(
+            application = context.applicationContext as android.app.Application,
+            userViewModel = userViewModel
+        )
     )
     // Initialize OrderViewModel
     val orderViewModel: OrderViewModel = viewModel(
@@ -77,7 +80,7 @@ fun CollletteApp() {
     // Initialize ApiClient
     val apiClient = ApiClient(context.applicationContext)
 
-    NavHost(navController = navController, startDestination = "checkout") {
+    NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
