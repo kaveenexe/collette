@@ -16,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.ProductViewModel
 
@@ -68,18 +70,15 @@ fun ProductDetailsScreen(
                             .verticalScroll(rememberScrollState())
                     ) {
                         // Product Image Placeholder
-                        Box(
+                        AsyncImage(
+                            model = product!!.imageUrl ?: "https://via.placeholder.com/150", // Fallback URL if imageUrl is null
+                            contentDescription = "Product Image",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(250.dp)
-                                .background(Color.White)
-                        ) {
-                            Text(
-                                "Product Image",
-                                modifier = Modifier.align(Alignment.Center),
-                                color = textColor
-                            )
-                        }
+                                .height(320.dp),
+                            contentScale = ContentScale.Crop // Crop the image to fill the width
+                        )
+
 
                         Column(
                             modifier = Modifier

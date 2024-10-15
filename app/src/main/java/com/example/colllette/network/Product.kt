@@ -9,5 +9,6 @@ data class Product(
     val price: Double,
     val stockQuantity: Int,
     val vendorId: String,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val imageUrl: String? // New attribute added for image URL
 )
