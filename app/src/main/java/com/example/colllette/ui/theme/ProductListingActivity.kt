@@ -16,12 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.colllette.model.Product
 import com.example.colllette.ui.theme.BannerCarousel
 import com.example.colllette.ui.theme.customBlue
@@ -186,7 +188,7 @@ fun ProductCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.75f),
+            .aspectRatio(0.6f),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp),
         onClick = onProductClick
@@ -197,6 +199,18 @@ fun ProductCard(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Add product image at the top of the card
+            AsyncImage(
+                model = product.imageUrl ?: "https://via.placeholder.com/150", // Fallback URL if imageUrl is null
+                contentDescription = "Product Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp),
+                contentScale = ContentScale.Crop // Crop the image to fill the width
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -222,10 +236,14 @@ fun ProductCard(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+
             Spacer(modifier = Modifier.height(12.dp))
+
             Button(
                 onClick = onAddToCart,
-                modifier = Modifier.fillMaxWidth().height(36.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = customBlue),
                 shape = RoundedCornerShape(8.dp)
             ) {
