@@ -1,11 +1,26 @@
 package com.example.colllette.model
 
+enum class OrderStatus(val status: Int) {
+    Purchased(0),
+    Accepted(1),
+    Processing(2),
+    Delivered(3),
+    Cancelled(4),
+    Pending(5);
+
+    companion object {
+        fun fromStatusValue(value: Int): OrderStatus {
+            return values().firstOrNull { it.status == value } ?: Purchased
+        }
+    }
+}
+
 data class Order(
     val id: String,
     val orderId: String,
     val status: String,
     val orderDate: String,
-    val paymentMethod: String,
+    val paymentMethod: Int,
     val orderItemsGroups: List<OrderItemGroup>,
     val totalAmount: Double,
     val customerId: String?,

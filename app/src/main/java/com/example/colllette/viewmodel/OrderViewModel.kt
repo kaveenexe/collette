@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.colllette.model.Order
-import com.example.colllette.network.OrderCancellation
 import com.example.colllette.network.ApiClient
 import com.example.colllette.network.OrderApi
+import com.example.colllette.network.OrderCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -72,14 +72,14 @@ class OrderViewModel(
     }
 
     // New order creation
-    fun createOrder(order: Order, onSuccess: (String) -> Unit) {
+    fun createOrder(order: Order, onSuccess: (String, String) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true // Set loading state to true
             try {
                 val createdOrder = orderApi.createOrder(order)
                 _order.value = createdOrder // Update the current order state
                 _error.value = null // Clear any previous errors
-                onSuccess(createdOrder.orderId) // Assuming createdOrder has an orderId property
+                onSuccess(createdOrder.id, createdOrder.orderId) // Pass both id and orderId
             } catch (e: Exception) {
                 _error.value = "Failed to create order: ${e.message}" // Set error message
             } finally {
@@ -129,7 +129,7 @@ class OrderViewModel(
         viewModelScope.launch {
             _isLoading.value = true // Set loading state to true
             try {
-                val response = orderApi.requestOrderCancellation(cancellation) // Request cancellation
+                val response = orderApi.requestOrderCancellation(cancellation) // Use the cancellation object directly
                 if (response.isSuccessful) {
                     _isOrderCancelled.value = true // Set cancellation success state
                     _error.value = null // Clear any previous errors

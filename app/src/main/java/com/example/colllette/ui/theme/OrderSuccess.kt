@@ -19,7 +19,7 @@ import androidx.navigation.NavController
 import com.example.colllette.R
 
 @Composable
-fun OrderSuccessScreen(navController: NavController, orderId: String?, customerId: String?) {
+fun OrderSuccessScreen(navController: NavController, id: String?, orderId: String?, customerId: String?) {
     // Background color for the success screen
     Box(
         modifier = Modifier
@@ -47,7 +47,7 @@ fun OrderSuccessScreen(navController: NavController, orderId: String?, customerI
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Order ID: #${orderId ?: "Unknown"}", // Display the order ID
+                text = "Order ID: ${orderId ?: "Unknown"}", // Display the order ID
                 color = Color.White,
                 fontSize = 20.sp,
             )
@@ -71,9 +71,7 @@ fun OrderSuccessScreen(navController: NavController, orderId: String?, customerI
             // "Delivery Status" button
             Button(
                 onClick = {
-                    if (orderId != null && customerId != null) {
-                        navController.navigate("view_order_screen/$customerId/$orderId")
-                    }
+                    navController.navigate("view_order_screen/${customerId}/${id}")
                 },
                 modifier = Modifier
                     .width(250.dp)

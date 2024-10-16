@@ -7,11 +7,11 @@ data class OrderCancellation(
     val orderId: String,
     val cancellationApproved: Boolean,
     val cancellationDate: LocalDateTime?,
-    val cancelRequestStatus: CancelRequestStatus
+    val cancelRequestStatus: Int
 )
 
-enum class CancelRequestStatus {
-    Pending,
-    Accepted,
-    Rejected
+enum class CancelRequestStatus(val value: Int) {
+    Pending(0),
+    Accepted(1),
+    Rejected(2)
 }

@@ -24,15 +24,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.colllette.data.local.UserEntity
+import com.example.colllette.model.Cart
 import com.example.colllette.ui.theme.darkBlue
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.UserViewModel
 
 @Composable
-fun OrderCheckoutScreen(navController: NavController, userViewModel: UserViewModel, productViewModel: ProductViewModel) {
+fun OrderCheckoutScreen(
+    navController: NavController,
+    userViewModel: UserViewModel,
+    productViewModel: ProductViewModel,
+    onNavigateBack: () -> Unit,
+    cart: Cart?
+) {
     val context = LocalContext.current
     val user by userViewModel.user.collectAsState()
-    val cart by productViewModel.cart.collectAsState()
+    val isLoading by productViewModel.isLoading.collectAsState()
+    val error by productViewModel.error.collectAsState()
 
     // Constants for styling
     val cardElevation = 8.dp
@@ -45,7 +53,7 @@ fun OrderCheckoutScreen(navController: NavController, userViewModel: UserViewMod
         OrderItem(
             name = cartItem.productName,
             quantity = cartItem.quantity,
-            price = cartItem.price.toInt(), // Assuming price is in double, converting to int
+            price = cartItem.price.toInt() // Assuming price is in double, converting to int
         )
     } ?: emptyList() // Fallback to an empty list if cart is null
 
@@ -76,7 +84,7 @@ fun OrderCheckoutScreen(navController: NavController, userViewModel: UserViewMod
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
                         }
                         Text(
@@ -119,45 +127,52 @@ fun OrderCheckoutScreen(navController: NavController, userViewModel: UserViewMod
                 // Delivery Address section
                 user?.let { AddressCard(it) }
 
-                // Order Summary section
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = spacing)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Order Summary",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = textSizeMedium,
-                        modifier = Modifier.weight(1f) // Makes sure the text takes available space
-                    )
-
-                    // Circle to show the number of items
-                    Box(
+                // Display loading indicator if cart is loading
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                } else if (error != null) {
+                    Text(text = "Error: $error", color = MaterialTheme.colorScheme.error)
+                } else {
+                    // Order Summary section
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
                         modifier = Modifier
-                            .size(30.dp) // Size of the circle
-                            .background(darkBlue, shape = CircleShape) // Circle shape with a background color
-                            .border(1.dp, Color.White, shape = CircleShape), // Optional white border
-                        contentAlignment = Alignment.Center // Centers the text inside the circle
+                            .padding(horizontal = spacing)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = orderItems.size.toString(), // Use actual item count
-                            color = Color.White, // Text color
+                            text = "Order Summary",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp // Adjust the font size as needed
+                            fontSize = textSizeMedium,
+                            modifier = Modifier.weight(1f) // Makes sure the text takes available space
                         )
+
+                        // Circle to show the number of items
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp) // Size of the circle
+                                .background(darkBlue, shape = CircleShape) // Circle shape with a background color
+                                .border(1.dp, Color.White, shape = CircleShape), // Optional white border
+                            contentAlignment = Alignment.Center // Centers the text inside the circle
+                        ) {
+                            Text(
+                                text = orderItems.size.toString(), // Use actual item count
+                                color = Color.White, // Text color
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp // Adjust the font size as needed
+                            )
+                        }
                     }
+
+                    // Order Items in a card
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val totalAmount = OrderItemsCard(orderItems)
+
+                    // Total Amount and Confirm Button
+                    Spacer(modifier = Modifier.height(48.dp))
+                    TotalAndConfirmRow(totalAmount, navController)
                 }
-
-                // Order Items in a card
-                Spacer(modifier = Modifier.height(16.dp))
-                val totalAmount = OrderItemsCard(orderItems)
-
-                // Total Amount and Confirm Button
-                Spacer(modifier = Modifier.height(20.dp))
-                TotalAndConfirmRow(totalAmount)
             }
         }
     }
@@ -230,7 +245,7 @@ fun ClothingItemRow(itemName: String, quantity: Int, price: Int) {
 }
 
 @Composable
-fun TotalAndConfirmRow(totalAmount: Int) {
+fun TotalAndConfirmRow(totalAmount: Int, navController: NavController) {
     Spacer(modifier = Modifier.height(18.dp))
     Card(
         modifier = Modifier
@@ -254,7 +269,7 @@ fun TotalAndConfirmRow(totalAmount: Int) {
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
-                    text = "Rs. $totalAmount", // Display calculated total price
+                    text = "Rs.$totalAmount", // Display calculated total price
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     color = Color.Black
@@ -263,7 +278,9 @@ fun TotalAndConfirmRow(totalAmount: Int) {
             Spacer(modifier = Modifier.width(20.dp)) // Optional: add some space between the total and button
 
             Button(
-                onClick = { /* Handle Confirm Action */ },
+                onClick = {
+                  navController.navigate("payment") // Navigate to the PaymentScreen
+                },
                 modifier = Modifier
                     .fillMaxWidth(0.8f) // Adjust the button width as needed
                     .height(50.dp),

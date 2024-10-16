@@ -1,7 +1,5 @@
 package com.example.colllette.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,15 +22,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.example.colllette.data.local.UserEntity
+import com.example.colllette.model.BillingAddress
 import com.example.colllette.model.BillingDetails
 import com.example.colllette.model.Cart
 import com.example.colllette.model.Order
 import com.example.colllette.model.OrderItemGroup
+import com.example.colllette.model.Product
 import com.example.colllette.ui.theme.darkBlue
 import com.example.colllette.viewmodel.OrderViewModel
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.UserViewModel
-import java.time.LocalDateTime
 
 @Composable
 fun PaymentScreen(navController: NavController, userViewModel: UserViewModel, productViewModel: ProductViewModel, orderViewModel: OrderViewModel) {
@@ -47,6 +46,7 @@ fun PaymentScreen(navController: NavController, userViewModel: UserViewModel, pr
     // Get user and cart details
     val user by userViewModel.user.collectAsState()
     val cart by productViewModel.cart.collectAsState()
+    val products by productViewModel.products.collectAsState()
 
     // Background with light ash color
     Box(
@@ -137,8 +137,7 @@ fun PaymentScreen(navController: NavController, userViewModel: UserViewModel, pr
 
             // Total Amount and Proceed Button
             cart?.let {
-                TotalAndProceedSection(navController, selectedPaymentMethod,
-                    it, user, orderViewModel)
+                TotalAndProceedSection(navController, selectedPaymentMethod, it, user, orderViewModel, products)
             }
         }
     }
@@ -192,7 +191,7 @@ fun PaymentOption(
 }
 
 @Composable
-fun TotalAndProceedSection(navController: NavController, paymentMethod: String, cart: Cart, user: UserEntity?, orderViewModel: OrderViewModel) {
+fun TotalAndProceedSection(navController: NavController, selectedPaymentMethod: String, cart: Cart, user: UserEntity?, orderViewModel: OrderViewModel, products: List<Product>) {
     Spacer(modifier = Modifier.height(45.dp))
     Column(
         modifier = Modifier
@@ -215,7 +214,7 @@ fun TotalAndProceedSection(navController: NavController, paymentMethod: String, 
                 color = Color.Black
             )
             Text(
-                text = "Rs. ${cart.totalPrice}",
+                text = "Rs.${cart.totalPrice}",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
@@ -225,100 +224,79 @@ fun TotalAndProceedSection(navController: NavController, paymentMethod: String, 
         Spacer(modifier = Modifier.height(25.dp))
 
         // Proceed Button
-        @RequiresApi(Build.VERSION_CODES.O)
-        @Composable
-        fun TotalAndProceedSection(navController: NavController, paymentMethod: String, cart: Cart, user: UserEntity?, orderViewModel: OrderViewModel) {
-            Spacer(modifier = Modifier.height(45.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Divider(color = Color.Gray, thickness = 1.dp, modifier = Modifier.padding(vertical = 16.dp))
-
-                // Row for total amount
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Total Amount",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "Rs. ${cart.totalPrice}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+        Button(
+            onClick = {
+                // Create billing details object
+                val billingDetails = user?.let {
+                    BillingDetails(
+                        customerName = "${it.firstName} ${it.lastName}",
+                        email = it.email,
+                        phone = it.contactNumber ?: "", // Nullable phone number
+                        singleBillingAddress = it.address,
+                        billingAddress = BillingAddress(
+                            streetAddress = "string",
+                            city = "string",
+                            province = "string",
+                            postalCode = "string",
+                            country = "string"
+                        )
                     )
                 }
 
-                Spacer(modifier = Modifier.height(25.dp))
-
-                // Proceed Button
-                Button(
-                    onClick = {
-                        // Fetch user details from userViewModel
-                        val billingDetails = user?.let {
-                            BillingDetails(
-                                customerName = "${it.firstName} ${it.lastName}",
-                                email = it.email ?: "",  // Assuming email is always present
-                                phone = it.contactNumber, // Nullable phone number
-                                singleBillingAddress = it.address ?: "", // Assuming address is provided
-                                billingAddress = null // Pass billingAddress as null correctly
+                // Map cart items to OrderItem
+                val orderItemsGroups = listOf(
+                    OrderItemGroup(
+                        listItemId = 0,
+                        items = cart.items.map { cartItem ->
+                            val product = products.find { it.id == cartItem.productId }
+                            // Check if product and uniqueProductId exist
+                            if (product == null || product.uniqueProductId.isNullOrEmpty()) {
+                                throw IllegalStateException("Product with ID ${cartItem.productId} does not have a valid uniqueProductId.")
+                            }
+                            com.example.colllette.model.OrderItem(
+                                productId = product.uniqueProductId,
+                                productName = cartItem.productName,
+                                vendorId = product.vendorId,
+                                quantity = cartItem.quantity,
+                                price = cartItem.price,
+                                productStatus = 0 // Assuming 0 is a default status
                             )
                         }
+                    )
+                )
 
-                        // Map cart items to OrderItem
-                        val orderItemsGroups = listOf(
-                            OrderItemGroup(
-                                listItemId = 1, // Example, adjust as necessary
-                                items = cart.items.map { cartItem ->
-                                    com.example.colllette.model.OrderItem(
-                                        productId = cartItem.productId,
-                                        productName = cartItem.productName,
-                                        vendorId = "someVendorId",
-                                        quantity = cartItem.quantity,
-                                        price = cartItem.price,
-                                        productStatus = 0
-                                    )
-                                }
-                            )
-                        )
-
-                        // Create Order object
-                        val order = Order(
-                            id = "", // Auto-generated by backend
-                            orderId = "", // Auto-generated by backend
-                            status = "Purchased", // Initial order status
-                            orderDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis())),
-                            paymentMethod = paymentMethod, // Use selected payment method
-                            orderItemsGroups = orderItemsGroups,
-                            totalAmount = cart.totalPrice,
-                            customerId = user?.id, // Assuming user object is non-null
-                            createdByCustomer = true,
-                            billingDetails = billingDetails // Pass the billing details
-                        )
-
-                        // Call createOrder method in the ViewModel and navigate on success
-                        orderViewModel.createOrder(order) { createdOrderId ->
-                            // Navigate to OrderSuccessScreen with the order ID
-                            navController.navigate("order_success_screen/$createdOrderId")
-                        }
+                // Create Order object matching your backend API format
+                val order = Order(
+                    id = "",
+                    orderId = "",
+                    status = "Purchased",
+                    orderDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis())),
+                    paymentMethod = when (selectedPaymentMethod) {
+                        "Visa Card" -> 0 // Assuming 0 represents Visa Card
+                        "MasterCard" -> 1 // Assuming 1 represents MasterCard
+                        "Cash on Delivery" -> 2 // Assuming 2 represents Cash on Delivery
+                        else -> -1 // Default case, handle as per your logic
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF04167C))
-                ) {
-                    Text(text = "PROCEED", color = Color.White, fontSize = 20.sp)
+                    orderItemsGroups = orderItemsGroups,
+                    totalAmount = cart.totalPrice,
+                    customerId = user?.id ?: "unknownCustomerId", // Ensure a valid customerId
+                    createdByCustomer = true,
+                    createdByAdmin = true, // Set according to your business logic
+                    billingDetails = billingDetails
+                )
+
+                // Call ViewModel to create the order and handle success
+                orderViewModel.createOrder(order) { createdId, createdOrderId ->
+                    navController.navigate("order_success_screen/$createdId/$createdOrderId/${user?.id}")
                 }
-            }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF04167C))
+        ) {
+            Text(text = "PROCEED", color = Color.White, fontSize = 20.sp)
         }
     }
 }
