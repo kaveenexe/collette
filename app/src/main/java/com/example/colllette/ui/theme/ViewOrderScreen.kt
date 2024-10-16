@@ -22,24 +22,29 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.ui.window.Dialog
-//import org.bson.types.ObjectId
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
+import com.example.colllette.model.Order
+import com.example.colllette.model.OrderStatus
 import com.example.colllette.network.CancelRequestStatus
 import com.example.colllette.network.OrderCancellation
 import com.example.colllette.viewmodel.OrderViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
-fun ViewOrderScreen(navController: NavController, orderId: String, customerId: String, viewModel: OrderViewModel) {
-    val order by viewModel.order.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-
-    // Fetch the order using customerId and orderId
-    LaunchedEffect(orderId, customerId) {
-        viewModel.getOrderByCustomerIdAndOrderId(customerId, orderId)
-    }
+fun ViewOrderScreen(
+    navController: NavController,
+    orderId: String,
+    customerId: String,
+    orderViewModel: OrderViewModel,
+    order: Order?
+) {
+    val isLoading by orderViewModel.isLoading.collectAsState()
+    val error by orderViewModel.error.collectAsState()
 
     val cardElevation = 8.dp
     val spacing = 16.dp
@@ -57,6 +62,8 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
         "Cancelled" to Color(0xFFE0A3A3),
         "Pending" to Color(0xFFB0C8E0)
     )
+
+    val currentStatus = OrderStatus.fromStatusValue(order?.status?.toInt() ?: 0).status
 
     // Background with light ash color
     Box(
@@ -108,7 +115,7 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Order Status Row
-                OrderStatusRow()
+                OrderStatusRow(currentStep = currentStatus)
 
                 Spacer(modifier = Modifier.height(25.dp))
 
@@ -132,15 +139,18 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
                         ) {
                             // Order ID
                             Text(
-                                text = "Order ID #${order?.orderId ?: "N/A"}",
+                                text = "Order ID ${order?.orderId ?: "N/A"}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = Color.Black
                             )
 
-                            // Order Date
+                            // Use the function in your Text composable
+                            val formattedOrderDate = formatOrderDate(order?.orderDate)
+
+                            // Display the formatted date
                             Text(
-                                text = order?.orderDate ?: "N/A",
+                                text = formattedOrderDate,
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
@@ -155,16 +165,18 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
                         ) {
                             // Total Amount
                             Text(
-                                text = "Order Amount ${order?.totalAmount ?: "N/A"}",
+                                text = "Order Amount Rs.${order?.totalAmount ?: "N/A"}",
                                 fontSize = 15.sp,
                                 color = Color.DarkGray
                             )
 
                             Spacer(modifier = Modifier.height(6.dp))
 
+                            val estimatedDeliveryDate = calculateEstimatedDelivery(order?.orderDate)
+
                             // Estimated Delivery Date
                             Text(
-                                text = "Estimated Delivery on October 15, 2024", // Replace with dynamic date
+                                text = "Estimated Delivery on $estimatedDeliveryDate",
                                 fontSize = 16.sp,
                                 color = Color.Gray
                             )
@@ -196,7 +208,7 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
                         contentAlignment = Alignment.Center // Centers the text inside the circle
                     ) {
                         Text(
-                            text = "${order?.orderItemsGroups?.size ?: 0}",
+                            text = "${order?.orderItemsGroups?.sumOf { it.items.size } ?: 0}",
                             color = Color.White, // Text color
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp // Adjust the font size as needed
@@ -216,7 +228,7 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
 
                             OrderItem(
                                 name = item.productName,
-                                price = item.price.toString(),
+                                price = "Rs.${item.price}",
                                 details = "Quantity: ${item.quantity}", // Assuming quantity is part of your item model
                                 status = statusName,
                                 statusColor = statusColor,
@@ -263,30 +275,168 @@ fun ViewOrderScreen(navController: NavController, orderId: String, customerId: S
             }
         }
 
-//        // Show confirmation dialog if showDialog is true
-//        if (showDialog) {
-//            ConfirmationDialog(
-//                onConfirm = {
-//                    showDialog = false
-//                    val orderCancellation = OrderCancellation(
-//                        id = ObjectId().toHexString(),
-//                        orderId = orderId,
-//                        cancellationApproved = false,
-//                        cancellationDate = null,
-//                        cancelRequestStatus = CancelRequestStatus.Pending
-//                    )
-//                    viewModel.requestOrderCancellation(orderCancellation) // Call ViewModel method
-//                },
-//                onDismiss = { showDialog = false }
-//            )
-//        }
+        if (showDialog) {
+            ConfirmationDialog(
+                onConfirm = {
+                    showDialog = false
+                    val orderCancellation = OrderCancellation(
+                        id = order!!.id,
+                        orderId = orderId,
+                        cancellationApproved = false,
+                        cancellationDate = null, // Not setting a date here
+                        cancelRequestStatus = CancelRequestStatus.Pending.value
+                    )
+
+                    orderViewModel.requestOrderCancellation(orderCancellation)
+                },
+                onDismiss = { showDialog = false }
+            )
+        }
     }
 }
 
 @Composable
-fun OrderStatusRow() {
+fun ConfirmationDialog(
+    message: String = "Are you sure you want to cancel the order?",
+    confirmText: String = "OK",
+    dismissText: String = "CANCEL",
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    // Use the Dialog composable provided by Compose
+    Dialog(onDismissRequest = { onDismiss() }) {
+        DialogContent(
+            message = message,
+            confirmText = confirmText,
+            dismissText = dismissText,
+            onConfirm = onConfirm,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+@Composable
+fun Dialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f)), // Optional: dim background
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                content() // Call the content that is passed to the dialog
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogContent(
+    message: String,
+    confirmText: String,
+    dismissText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        DialogButtons(
+            confirmText = confirmText,
+            dismissText = dismissText,
+            onConfirm = onConfirm,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+@Composable
+private fun DialogButtons(
+    confirmText: String,
+    dismissText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Button(
+            onClick = { onDismiss() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+            modifier = Modifier.weight(1f).padding(end = 8.dp)
+        ) {
+            Text(text = dismissText, color = Color.White)
+        }
+
+        Button(
+            onClick = { onConfirm() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+            modifier = Modifier.weight(1f).padding(start = 8.dp)
+        ) {
+            Text(text = confirmText, color = Color.White)
+        }
+    }
+}
+
+// Function to format the estimated delivery date
+fun calculateEstimatedDelivery(orderDateString: String?): String {
+    return orderDateString?.let { dateString ->
+        try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'", Locale.ENGLISH)
+            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val orderDate: Date = inputFormat.parse(dateString) ?: return "N/A"
+
+            // Adding 7 days to the order date
+            val calendar = Calendar.getInstance()
+            calendar.time = orderDate
+            calendar.add(Calendar.DAY_OF_MONTH, 7)
+
+            // Format the new date
+            val outputFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH)
+            outputFormat.format(calendar.time)
+        } catch (e: Exception) {
+            "N/A"
+        }
+    } ?: "N/A"
+}
+
+// Function to format the order date
+fun formatOrderDate(orderDateString: String?): String {
+    return orderDateString?.let { dateString ->
+        try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'", Locale.ENGLISH)
+            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date: Date = inputFormat.parse(dateString) ?: return "N/A"
+            val outputFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH)
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            "N/A"
+        }
+    } ?: "N/A"
+}
+
+@Composable
+fun OrderStatusRow(currentStep: Int) {
     val statusSteps = listOf("Purchased", "Accepted", "Processing", "Delivered")
-    val currentStep = 2 // This controls up to which step is completed
 
     Row(
         modifier = Modifier
@@ -372,9 +522,9 @@ fun OrderItem(name: String, price: String, details: String, status: String, stat
             // Item Details
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(5.dp))
-                Text(text = details, color = Color.Gray, fontSize = 12.sp)
-                Spacer(modifier = Modifier.height(5.dp))
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(text = details, color = Color.Gray, fontSize = 13.sp)
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(text = price, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
             }
 
@@ -391,93 +541,3 @@ fun OrderItem(name: String, price: String, details: String, status: String, stat
         }
     }
 }
-
-//@Composable
-//fun ConfirmationDialog(
-//    message: String = "Are you sure you want to cancel the order?",
-//    confirmText: String = "OK",
-//    dismissText: String = "CANCEL",
-//    onConfirm: () -> Unit,
-//    onDismiss: () -> Unit
-//) {
-//    Dialog(onDismissRequest = { onDismiss() }) {
-//        DialogContent(
-//            message = message,
-//            confirmText = confirmText,
-//            dismissText = dismissText,
-//            onConfirm = onConfirm,
-//            onDismiss = onDismiss
-//        )
-//    }
-//}
-//
-//@Composable
-//private fun DialogContent(
-//    message: String,
-//    confirmText: String,
-//    dismissText: String,
-//    onConfirm: () -> Unit,
-//    onDismiss: () -> Unit
-//) {
-//    Surface(
-//        shape = RoundedCornerShape(8.dp),
-//        color = Color.White
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .padding(16.dp)
-//                .fillMaxWidth(),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            Text(
-//                text = message,
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 15.sp,
-//                color = Color.Black,
-//                modifier = Modifier.padding(bottom = 16.dp)
-//            )
-//
-//            DialogButtons(
-//                confirmText = confirmText,
-//                dismissText = dismissText,
-//                onConfirm = onConfirm,
-//                onDismiss = onDismiss
-//            )
-//        }
-//    }
-//}
-//
-//@Composable
-//private fun DialogButtons(
-//    confirmText: String,
-//    dismissText: String,
-//    onConfirm: () -> Unit,
-//    onDismiss: () -> Unit
-//) {
-//    Row(
-//        modifier = Modifier.fillMaxWidth(),
-//        horizontalArrangement = Arrangement.SpaceEvenly
-//    ) {
-//        Button(
-//            onClick = { onDismiss() },
-//            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-//            shape = RoundedCornerShape(6.dp),
-//            modifier = Modifier
-//                .width(107.dp)
-//                .height(35.dp)
-//        ) {
-//            Text(text = dismissText, color = Color.Black)
-//        }
-//
-//        Button(
-//            onClick = { onConfirm() },
-//            colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
-//            shape = RoundedCornerShape(6.dp),
-//            modifier = Modifier
-//                .width(100.dp)
-//                .height(35.dp)
-//        ) {
-//            Text(text = confirmText, color = Color.White)
-//        }
-//    }
-//}

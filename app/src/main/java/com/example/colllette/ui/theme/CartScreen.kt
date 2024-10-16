@@ -19,16 +19,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.colllette.model.Cart
 import com.example.colllette.model.CartItem
 import com.example.colllette.ui.theme.customBlue
 import com.example.colllette.viewmodel.ProductViewModel
+import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     productViewModel: ProductViewModel,
+    navController: NavController,
     onNavigateBack: () -> Unit,
-    onProceedToCheckout: () -> Unit
+    onProceedToCheckout: (Cart) -> Unit
 ) {
     val cart by productViewModel.cart.collectAsState()
     val isLoading by productViewModel.isLoading.collectAsState()
@@ -95,7 +99,10 @@ fun CartScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = onProceedToCheckout,
+                    onClick = {
+                        onProceedToCheckout(cart!!)
+                        navController.navigate("checkout/${cart!!.id}") // Navigate to checkout screen with cartId
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = customBlue),
                     shape = RoundedCornerShape(8.dp)

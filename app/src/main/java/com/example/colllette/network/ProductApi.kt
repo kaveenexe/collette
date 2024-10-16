@@ -15,6 +15,12 @@ interface ProductApi {
     @GET("api/Cart/{userId}")
     suspend fun getCart(@Path("userId") userId: String): Cart
 
+    @GET("api/Cart/{userId}/{cartId}")
+    suspend fun getCartByUserIdAndCartId(
+        @Path("userId") userId: String,
+        @Path("cartId") cartId: String
+    ): Cart
+
     @DELETE("api/Cart/{userId}")
     suspend fun deleteCart(@Path("userId") userId: String)
 

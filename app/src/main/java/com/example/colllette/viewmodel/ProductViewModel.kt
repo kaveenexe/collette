@@ -78,6 +78,21 @@ class ProductViewModel(
         }
     }
 
+    fun fetchCartByCartId(cartId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val userId = getUserId() // This will throw an exception if the ID is not available
+                val fetchedCart = apiClient.productApi.getCartByUserIdAndCartId(userId, cartId) // Pass the cartId to the API
+                _cart.value = fetchedCart
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch cart: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     private fun fetchCart() {
         viewModelScope.launch {
