@@ -5,8 +5,9 @@ enum class OrderStatus(val status: Int) {
     Accepted(1),
     Processing(2),
     Delivered(3),
-    Cancelled(4),
-    Pending(5);
+    PartiallyDelivered(4),
+    Cancelled(5),
+    Pending(6);
 
     companion object {
         fun fromStatusValue(value: Int): OrderStatus {

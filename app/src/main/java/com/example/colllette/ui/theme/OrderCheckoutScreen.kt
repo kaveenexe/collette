@@ -25,9 +25,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.colllette.data.local.UserEntity
 import com.example.colllette.model.Cart
+import com.example.colllette.model.Product
 import com.example.colllette.ui.theme.darkBlue
 import com.example.colllette.viewmodel.ProductViewModel
 import com.example.colllette.viewmodel.UserViewModel
+import androidx.compose.foundation.Image
+import coil.compose.rememberAsyncImagePainter
 
 @Composable
 fun OrderCheckoutScreen(
@@ -38,6 +41,7 @@ fun OrderCheckoutScreen(
     cart: Cart?
 ) {
     val context = LocalContext.current
+    val products by productViewModel.products.collectAsState()
     val user by userViewModel.user.collectAsState()
     val isLoading by productViewModel.isLoading.collectAsState()
     val error by productViewModel.error.collectAsState()
@@ -51,6 +55,7 @@ fun OrderCheckoutScreen(
     // Map cart items to order items
     val orderItems = cart?.items?.map { cartItem ->
         OrderItem(
+            id = cartItem.productId,
             name = cartItem.productName,
             quantity = cartItem.quantity,
             price = cartItem.price.toInt() // Assuming price is in double, converting to int
@@ -99,7 +104,8 @@ fun OrderCheckoutScreen(
                     // Tabs (Delivery and Payment)
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth().padding(horizontal = 14.dp),
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -152,7 +158,10 @@ fun OrderCheckoutScreen(
                         Box(
                             modifier = Modifier
                                 .size(30.dp) // Size of the circle
-                                .background(darkBlue, shape = CircleShape) // Circle shape with a background color
+                                .background(
+                                    darkBlue,
+                                    shape = CircleShape
+                                ) // Circle shape with a background color
                                 .border(1.dp, Color.White, shape = CircleShape), // Optional white border
                             contentAlignment = Alignment.Center // Centers the text inside the circle
                         ) {
@@ -167,7 +176,7 @@ fun OrderCheckoutScreen(
 
                     // Order Items in a card
                     Spacer(modifier = Modifier.height(16.dp))
-                    val totalAmount = OrderItemsCard(orderItems)
+                    val totalAmount = OrderItemsCard(orderItems, products)
 
                     // Total Amount and Confirm Button
                     Spacer(modifier = Modifier.height(48.dp))
@@ -179,13 +188,14 @@ fun OrderCheckoutScreen(
 }
 
 data class OrderItem(
+    val id: String,
     val name: String,      // Name of the item
     val quantity: Int,     // Quantity of the item
     val price: Int,        // Price of the item
 )
 
 @Composable
-fun OrderItemsCard(orderItems: List<OrderItem>): Int {
+fun OrderItemsCard(orderItems: List<OrderItem>, products: List<Product>): Int {
     var totalAmount = 0
 
     Card(
@@ -201,10 +211,12 @@ fun OrderItemsCard(orderItems: List<OrderItem>): Int {
         ) {
             // Display clothing items
             for (item in orderItems) {
+                val product = products.find { it.id == item.id }
                 ClothingItemRow(
                     itemName = item.name,
                     quantity = item.quantity,
-                    price = item.price
+                    price = item.price,
+                    imageUrl = product?.imageUrl
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Divider(thickness = 1.dp) // Add a divider line after each item
@@ -217,12 +229,23 @@ fun OrderItemsCard(orderItems: List<OrderItem>): Int {
 }
 
 @Composable
-fun ClothingItemRow(itemName: String, quantity: Int, price: Int) {
+fun ClothingItemRow(itemName: String, quantity: Int, price: Int, imageUrl: String?) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer(modifier = Modifier.width(8.dp))
+        // Display the product image if available
+        imageUrl?.let {
+            Image(
+                painter = rememberAsyncImagePainter(it),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+            )
+        }
+        Spacer(modifier = Modifier.width(20.dp))
         Column {
             Text(
                 text = itemName,
@@ -333,7 +356,9 @@ fun AddressCard(user: UserEntity) {
         Spacer(modifier = Modifier.width(5.dp))
 
         // Address Card
-        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+        Column(modifier = Modifier
+            .weight(1f)
+            .padding(start = 8.dp)) {
 
             Spacer(modifier = Modifier.height(4.dp)) // Space between title and card
 

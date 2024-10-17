@@ -1,10 +1,9 @@
 package com.example.colllette.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,24 +11,26 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.clip
 import androidx.navigation.NavController
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import com.example.colllette.ui.theme.darkBlue
 import com.example.colllette.viewmodel.OrderViewModel
+import com.example.colllette.model.Order
+import com.example.colllette.model.OrderStatus
 
 @Composable
-fun OrderHistoryScreen(navController: NavController, orderViewModel: OrderViewModel) {
+fun OrderHistoryScreen(navController: NavController, orderViewModel: OrderViewModel, customerId: String) {
+    LaunchedEffect(Unit) {
+        orderViewModel.fetchOrdersByCustomerId(customerId)
+    }
     // Observe orders from the ViewModel
     val orders by orderViewModel.orders.collectAsState(initial = emptyList())
     val isLoading by orderViewModel.isLoading.collectAsState(initial = false)
@@ -92,7 +93,7 @@ fun OrderHistoryScreen(navController: NavController, orderViewModel: OrderViewMo
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
                 )
-            } else {
+            } else if (orders.isEmpty()) {
                 // Display a message if there are no orders
                 Text(
                     text = "No orders found.",
@@ -100,25 +101,35 @@ fun OrderHistoryScreen(navController: NavController, orderViewModel: OrderViewMo
                         .padding(16.dp)
                         .align(Alignment.CenterHorizontally)
                 )
+            } else {
+                // Display the list of orders
+                LazyColumn {
+                    items(orders.size) { index ->
+                        val order = orders[index]  // Get the order at the current index
+                        OrderCard(order = order, cardElevation = cardElevation, navController = navController)  // Pass the order to the OrderCard
+                    }
+                }
             }
         }
     }
 }
 
-@Composable
-fun OrderCard(order: Order, cardElevation: Dp) {
-    // Define your statuses with custom colors
-    val statuses = mapOf(
-        "Purchased" to Color(0xFF8FB8D5),
-        "Accepted" to Color(0xFFB7E8A0),
-        "Processing" to Color(0xFFD1A6E3),
-        "Delivered" to Color(0xFFE0C66A),
-        "Cancelled" to Color(0xFFE0A3A3),
-        "Pending" to Color(0xFFB0C8E0)
-    )
+fun getOrderStatusDetails(status: Int): Pair<String, Color> {
+    return when (OrderStatus.fromStatusValue(status)) {
+        OrderStatus.Purchased -> "Purchased" to Color(0xFF8FB8D5) // Replace with your desired color
+        OrderStatus.Accepted -> "Accepted" to Color(0xFFB7E8A0)
+        OrderStatus.Processing -> "Processing" to Color(0xFFD1A6E3)
+        OrderStatus.PartiallyDelivered -> "Partially Delivered" to Color(0xFFDBA695)
+        OrderStatus.Delivered -> "Delivered" to Color(0xFFE0C66A)
+        OrderStatus.Cancelled -> "Cancelled" to Color(0xFFE0A3A3)
+        OrderStatus.Pending -> "Pending" to Color(0xFFB0C8E0)
+    }
+}
 
-    // Get the color for the current order status
-    val statusColor = statuses[order.status] ?: Color.Gray
+@Composable
+fun OrderCard(order: Order, cardElevation: Dp, navController: NavController) {
+    // Get the status details using the helper function
+    val (orderStatusString, statusColor) = getOrderStatusDetails(order.status.toInt())
 
     Card(
         modifier = Modifier
@@ -136,57 +147,27 @@ fun OrderCard(order: Order, cardElevation: Dp) {
                 horizontalAlignment = Alignment.Start
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Dashed-line square for icon
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.5.dp,
-                                brush = Brush.linearGradient(
-                                    colors = listOf(order.iconColor ?: Color.Gray, order.iconColor ?: Color.Gray)
-                                ),
-                                shape = RoundedCornerShape(8.dp),
-                            )
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (order.customIconRes != null) {
-                            Image(
-                                painter = painterResource(id = order.customIconRes),
-                                contentDescription = "Order Status Custom Icon",
-                                modifier = Modifier.size(40.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = order.icon ?: Icons.Default.Info,
-                                contentDescription = "Order Status Icon",
-                                tint = order.iconColor ?: Color.Gray,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(15.dp))
-
                     // Order ID
                     Text(
-                        text = "Order ID - ${order.id}",
+                        text = "Order ID - ${order.orderId}",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(5.dp))
+
+                val formattedOrderDate = formatOrderDate(order.orderDate)
+
                 Text(
-                    text = order.date,
+                    text = formattedOrderDate,
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Total Amount
             Row(
@@ -220,10 +201,9 @@ fun OrderCard(order: Order, cardElevation: Dp) {
                     fontSize = 16.sp,
                     color = Color.Black
                 )
-
                 // Status Badge
                 Text(
-                    text = order.status,
+                    text = orderStatusString,
                     color = Color.White,
                     modifier = Modifier
                         .background(statusColor, shape = RoundedCornerShape(4.dp)) // Rounded corners for the badge
@@ -261,8 +241,7 @@ fun OrderCard(order: Order, cardElevation: Dp) {
                 // Track Order Button
                 Button(
                     onClick = {
-                        // TODO: Implement track order functionality
-                        // e.g., navController.navigate("view_order_screen/{orderId}/{customerId}")
+                        navController.navigate("view_order_screen/${order.customerId}/${order.id}")
                     },
                     modifier = Modifier
                         .width(155.dp)  // Custom width
@@ -279,15 +258,3 @@ fun OrderCard(order: Order, cardElevation: Dp) {
         }
     }
 }
-
-data class Order(
-    val id: String,
-    val date: String,
-    val status: String,
-    val icon: ImageVector? = null,
-    val iconColor: Color? = null,
-    val customIconRes: Int? = null,
-    val customerId: String? = null,
-    val orderItems: List<Unit> = emptyList(),
-    val totalAmount: Double
-)
