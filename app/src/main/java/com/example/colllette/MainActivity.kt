@@ -84,7 +84,7 @@ fun CollletteApp() {
     // Initialize ApiClient
     val apiClient = ApiClient(context.applicationContext)
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(navController = navController, startDestination = "home") {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
@@ -94,7 +94,10 @@ fun CollletteApp() {
             onNavigateToProductDetails = { productId ->
                 navController.navigate("productDetails/$productId")
             },
-            onNavigateToProfile = { navController.navigate("profile") } // Navigate to ProfileScreen
+            onNavigateToProfile = { navController.navigate("profile") }, // Navigate to ProfileScreen
+            onNavigateToMyOrders = { customerId ->
+                navController.navigate("history/$customerId")
+            }
         ) }
         composable("cart") {
             CartScreen(
@@ -158,12 +161,17 @@ fun CollletteApp() {
                 orderId = orderIdWithHash,
                 customerId = customerId,
                 orderViewModel = orderViewModel,
+                productViewModel = productViewModel,
                 order = order
             )
         }
-        composable("history") {
+        composable("history/{customerId}") { backStackEntry ->
+            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
             OrderHistoryScreen(
                 navController = navController,
-                orderViewModel = orderViewModel)}
+                orderViewModel = orderViewModel,
+                customerId = customerId
+            )
         }
+    }
 }

@@ -19,16 +19,21 @@ import androidx.navigation.NavController
 import com.example.colllette.ui.theme.darkBlue
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.geometry.Offset
+import coil.compose.rememberAsyncImagePainter
 import com.example.colllette.model.Order
 import com.example.colllette.model.OrderStatus
 import com.example.colllette.network.CancelRequestStatus
 import com.example.colllette.network.OrderCancellation
 import com.example.colllette.viewmodel.OrderViewModel
+import com.example.colllette.viewmodel.ProductViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -41,8 +46,10 @@ fun ViewOrderScreen(
     orderId: String,
     customerId: String,
     orderViewModel: OrderViewModel,
+    productViewModel: ProductViewModel,
     order: Order?
 ) {
+    val products by productViewModel.products.collectAsState()
     val isLoading by orderViewModel.isLoading.collectAsState()
     val error by orderViewModel.error.collectAsState()
 
@@ -52,6 +59,7 @@ fun ViewOrderScreen(
     val textSizeMedium = 20.sp
 
     var showDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Define your statuses with custom colors
     val statuses = listOf(
@@ -59,11 +67,13 @@ fun ViewOrderScreen(
         "Accepted" to Color(0xFFB7E8A0),
         "Processing" to Color(0xFFD1A6E3),
         "Delivered" to Color(0xFFE0C66A),
-        "Cancelled" to Color(0xFFE0A3A3),
+        "PartiallyDelivered" to Color(0xFFEEB9A8),
+        "Cancelled" to Color(0xFFD17D7D),
         "Pending" to Color(0xFFB0C8E0)
     )
 
-    val currentStatus = OrderStatus.fromStatusValue(order?.status?.toInt() ?: 0).status
+    // Get the current status of the order and map to index
+    val currentStatusStep = getStatusStepIndex(order?.status?.toInt() ?: 0)
 
     // Background with light ash color
     Box(
@@ -115,7 +125,7 @@ fun ViewOrderScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Order Status Row
-                OrderStatusRow(currentStep = currentStatus)
+                OrderStatusRow(currentStep = currentStatusStep)
 
                 Spacer(modifier = Modifier.height(25.dp))
 
@@ -225,8 +235,9 @@ fun ViewOrderScreen(
                             val statusIndex = item.productStatus // Get the index from item.productStatus
                             val statusName = statuses.getOrNull(statusIndex)?.first ?: "Unknown" // Get the status name safely
                             val statusColor = statuses.getOrNull(statusIndex)?.second ?: Color.Gray // Get the color safely
-
+                            val product = products.find { it.uniqueProductId == item.productId }
                             OrderItem(
+                                imageUrl = product?.imageUrl,
                                 name = item.productName,
                                 price = "Rs.${item.price}",
                                 details = "Quantity: ${item.quantity}", // Assuming quantity is part of your item model
@@ -288,9 +299,150 @@ fun ViewOrderScreen(
                     )
 
                     orderViewModel.requestOrderCancellation(orderCancellation)
+                    showSuccessDialog = true
                 },
                 onDismiss = { showDialog = false }
             )
+        }
+
+        if (showSuccessDialog) {
+            SuccessDialog(
+                title = "Cancellation Request Successful",
+                message = "Your order cancellation request has been sent. Please wait for order cancellation approval.",
+                onConfirm = { showSuccessDialog = false },
+                navController = navController
+            )
+        }
+    }
+}
+
+fun getStatusStepIndex(status: Int): Int {
+    return when (status) {
+        0 -> 0 // Purchased
+        1 -> 1 // Accepted
+        2, 3, 4, 5 -> 2 // Processing, Partially Delivered, Pending, Cancelled
+        6 -> 3 // Delivered
+        else -> -1
+    }
+}
+
+@Composable
+fun OrderStatusRow(currentStep: Int) {
+    val statusSteps = listOf("Purchased", "Accepted", "Processing", "Delivered")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        statusSteps.forEachIndexed { index, step ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Circle for each status step
+                Box(
+                    modifier = Modifier
+                        .size(30.dp) // Adjust circle size
+                        .background(
+                            color = if (index <= currentStep) darkBlue else Color.Gray,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Add tick for completed steps
+                    if (index <= currentStep) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp)) // Reduced space between circle and line
+
+                // Status Label
+                Text(
+                    text = step,
+                    fontSize = 14.sp,
+                    fontWeight = if (index == currentStep) FontWeight.Bold else FontWeight.Normal,
+                    color = if (index <= currentStep) Color.Black else Color.Gray
+                )
+            }
+
+            // Connecting line between steps, except for the last one
+            if (index < statusSteps.size - 1) {
+                Box(
+                    modifier = Modifier
+                        .offset(y = (-12).dp) // Move the line closer to the circle by reducing this value
+                ) {
+                    Canvas(
+                        modifier = Modifier
+                            .height(3.dp)
+                            .width(30.dp), // Adjust this width for line length
+                    ) {
+                        drawLine(
+                            color = if (index < currentStep) darkBlue else Color.Gray,
+                            start = Offset(0f, size.height / 2),
+                            end = Offset(size.width, size.height / 2),
+                            strokeWidth = 10f // Adjust thickness of the line
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SuccessDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    navController: NavController
+) {
+    Dialog(onDismissRequest = { onConfirm() }) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color.White,
+            modifier = Modifier
+                .padding(14.dp)
+                .widthIn(min = 200.dp, max = 300.dp)
+                .heightIn(min = 150.dp, max = 200.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = message,
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                Button(
+                    onClick = {
+                        onConfirm() // Call the confirm action
+                        navController.navigate("home") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        } // Redirect to the home page
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = darkBlue)
+                ) {
+                    Text(text = "OK", color = Color.White)
+                }
+            }
         }
     }
 }
@@ -389,7 +541,7 @@ private fun DialogButtons(
 
         Button(
             onClick = { onConfirm() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+            colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
             modifier = Modifier.weight(1f).padding(start = 8.dp)
         ) {
             Text(text = confirmText, color = Color.White)
@@ -435,75 +587,7 @@ fun formatOrderDate(orderDateString: String?): String {
 }
 
 @Composable
-fun OrderStatusRow(currentStep: Int) {
-    val statusSteps = listOf("Purchased", "Accepted", "Processing", "Delivered")
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        statusSteps.forEachIndexed { index, step ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Circle for each status step
-                Box(
-                    modifier = Modifier
-                        .size(30.dp) // Adjust circle size
-                        .background(
-                            color = if (index <= currentStep) darkBlue else Color.Gray,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Add tick for completed steps
-                    if (index <= currentStep) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp)) // Reduced space between circle and line
-
-                // Status Label
-                Text(
-                    text = step,
-                    fontSize = 14.sp,
-                    fontWeight = if (index == currentStep) FontWeight.Bold else FontWeight.Normal,
-                    color = if (index <= currentStep) Color.Black else Color.Gray
-                )
-            }
-
-            // Connecting line between steps, except for the last one
-            if (index < statusSteps.size - 1) {
-                Box(
-                    modifier = Modifier
-                        .offset(y = (-12).dp) // Move the line closer to the circle by reducing this value
-                ) {
-                    Canvas(
-                        modifier = Modifier
-                            .height(3.dp)
-                            .width(30.dp), // Adjust this width for line length
-                    ) {
-                        drawLine(
-                            color = if (index < currentStep) darkBlue else Color.Gray,
-                            start = Offset(0f, size.height / 2),
-                            end = Offset(size.width, size.height / 2),
-                            strokeWidth = 10f // Adjust thickness of the line
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun OrderItem(name: String, price: String, details: String, status: String, statusColor: Color) {
+fun OrderItem(imageUrl: String?, name: String, price: String, details: String, status: String, statusColor: Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -517,12 +601,23 @@ fun OrderItem(name: String, price: String, details: String, status: String, stat
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.width(16.dp))
+            // Display the product image if available
+            imageUrl?.let {
+                Image(
+                    painter = rememberAsyncImagePainter(it),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White)
+                )
+            }
+            Spacer(modifier = Modifier.width(15.dp))
 
             // Item Details
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(text = details, color = Color.Gray, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(text = price, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)

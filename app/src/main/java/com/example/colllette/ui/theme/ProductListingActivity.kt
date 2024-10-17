@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,7 +40,8 @@ fun ProductListingScreen(
     userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(LocalContext.current.applicationContext as android.app.Application)),
     onNavigateToCart: () -> Unit,
     onNavigateToProductDetails: (String) -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToMyOrders: (String) -> Unit
 ) {
     val products by productViewModel.products.collectAsState()
     val cart by productViewModel.cart.collectAsState()
@@ -81,6 +83,21 @@ fun ProductListingScreen(
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Profile",
+                            tint = customBlue
+                        )
+                    }
+
+                    // Order History Icon
+                    IconButton(
+                        onClick = {
+                            user?.let {
+                                onNavigateToMyOrders(it.id) // Pass the id to history screen
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shop,
+                            contentDescription = "Order History",
                             tint = customBlue
                         )
                     }

@@ -12,7 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class ApiClient(private val context: Context) {
     companion object {
-        private const val BASE_URL = "https://33fa-2402-4000-2340-33cf-693f-adad-b781-2531.ngrok-free.app/"
+        private const val BASE_URL = "https://fd71-2402-4000-b240-658d-c490-8c6e-918-15f6.ngrok-free.app/"
         // private const val BASE_URL = "http://192.168.1.3:8082/" // Replace with your actual backend URL
     }
 
