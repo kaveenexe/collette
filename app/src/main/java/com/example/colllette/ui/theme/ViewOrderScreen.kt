@@ -273,14 +273,16 @@ fun ViewOrderScreen(
 
                     // Message Button with blue background and white text
                     Button(
-                        onClick = { /* TODO: Send Message */ },
+                        onClick = {
+                            navController.navigate("home") // Navigate to the HomeScreen
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = darkBlue),
                         shape = RoundedCornerShape(6.dp), // Slightly rounded corners
                         modifier = Modifier
                             .width(170.dp) // Same width as Cancel button for consistency
                             .height(50.dp) // Same height for square shape
                     ) {
-                        Text(text = "Message", color = Color.White, fontSize = 18.sp)
+                        Text(text = "Go to Home", color = Color.White, fontSize = 18.sp)
                     }
                 }
             }
