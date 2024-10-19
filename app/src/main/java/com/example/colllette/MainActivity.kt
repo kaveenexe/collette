@@ -84,7 +84,7 @@ fun CollletteApp() {
     // Initialize ApiClient
     val apiClient = ApiClient(context.applicationContext)
 
-    NavHost(navController = navController, startDestination = "home") {
+    NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("activationPending") { ActivationPendingScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
